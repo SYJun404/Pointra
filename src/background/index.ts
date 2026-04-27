@@ -37,6 +37,7 @@ class BackgroundManager {
                 center: true,
                 transparent: true,
                 shadow: true,
+                skipTaskbar: true,
             });
 
             this.mainWindow.once("tauri://webview-created", async () => {
@@ -45,7 +46,7 @@ class BackgroundManager {
                         label: "main",
                     });
 
-                    await this.mainWindow?.show();
+                    // await this.mainWindow?.show();
                 } catch (e) {
                     console.error("Failed to apply effects:", e);
                 }

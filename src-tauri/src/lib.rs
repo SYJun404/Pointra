@@ -5,8 +5,14 @@ use utils::shortcuts;
 
 pub fn run() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![apply_window_effects]) // 注册命令
+        // 注册命令
+        .invoke_handler(tauri::generate_handler![apply_window_effects])
         .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+            }
+            // 注册快捷键
             shortcuts::setup_shortcuts(app)?;
             Ok(())
         })
