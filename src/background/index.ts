@@ -1,5 +1,5 @@
-import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { invoke } from "@tauri-apps/api/core";
+import { WebviewWindow } from "@tauri-apps/api/webviewWindow";
 
 class BackgroundManager {
     private static instance: BackgroundManager;
@@ -16,16 +16,12 @@ class BackgroundManager {
         return BackgroundManager.instance;
     }
 
-    /**
-     * 启动初始化
-     */
+    // 启动初始化
     public async run() {
         await this.createMainWindow();
     }
 
-    /**
-     * 创建/获取主窗口
-     */
+    // 创建主窗口
     private async createMainWindow() {
         this.mainWindow = await WebviewWindow.getByLabel("main");
 
@@ -45,14 +41,10 @@ class BackgroundManager {
 
             this.mainWindow.once("tauri://webview-created", async () => {
                 try {
-                    // 1. 告诉 Rust 给这个窗口施加 macOS 效果
-                    // 注意：Tauri 2.0 会自动将当前窗口实例传递给 Rust 的 window 参数
                     await invoke("apply_window_effects", {
-                        // 明确指定是对哪个窗口操作
                         label: "main",
                     });
 
-                    // 2. 显示窗口
                     await this.mainWindow?.show();
                 } catch (e) {
                     console.error("Failed to apply effects:", e);

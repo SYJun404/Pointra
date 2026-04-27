@@ -1,3 +1,4 @@
+#[allow(unused_imports)]
 use window_vibrancy::{apply_blur, apply_vibrancy, NSVisualEffectMaterial};
 
 #[tauri::command]
