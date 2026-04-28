@@ -1,5 +1,29 @@
+use tauri::{Manager, WebviewWindow};
+use tauri_nspanel::{
+    tauri_panel, CollectionBehavior, PanelLevel, StyleMask, TrackingAreaOptions, WebviewWindowExt,
+};
 #[allow(unused_imports)]
 use window_vibrancy::{apply_blur, apply_vibrancy, NSVisualEffectMaterial};
+
+tauri_panel! {
+    panel!(BasicPanel {
+        config: {
+            can_become_key_window: true,
+            is_floating_panel: true
+        }
+        with: {
+            // Enable mouse tracking for the panel's content view
+            // This allows the panel to receive mouse events even when not key/active
+            tracking_area: {
+                options: TrackingAreaOptions::new()
+                    .active_always()           // Track mouse even when app is not active
+                    .mouse_entered_and_exited() // Get notified when mouse enters/exits
+                    .mouse_moved(),             // Track mouse movement
+                auto_resize: true               // Resize tracking area with window
+            }
+        }
+    })
+}
 
 #[tauri::command]
 pub fn apply_window_effects(window: tauri::Window) {
@@ -7,6 +31,26 @@ pub fn apply_window_effects(window: tauri::Window) {
     {
         apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)
             .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
+
+        if let Some(web_window) = window.get_webview_window("main") {
+            let panel = web_window.to_panel::<BasicPanel>().unwrap();
+
+            // Set the window to float level
+            panel.set_level(PanelLevel::Floating.value());
+
+            // Ensures the panel cannot activate the app
+            panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
+
+            // Allows the panel to:
+            // - display on the same space as the full screen window
+            // - join all spaces
+            panel.set_collection_behavior(
+                CollectionBehavior::new()
+                    .full_screen_auxiliary()
+                    .can_join_all_spaces()
+                    .into(),
+            );
+        }
     }
 
     #[cfg(target_os = "windows")]

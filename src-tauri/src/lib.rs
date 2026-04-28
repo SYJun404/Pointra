@@ -17,6 +17,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_nspanel::init())
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
