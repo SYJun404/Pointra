@@ -1,4 +1,4 @@
-use tauri::{Manager, WebviewWindow};
+use tauri::Manager;
 use tauri_nspanel::{
     tauri_panel, CollectionBehavior, PanelLevel, StyleMask, TrackingAreaOptions, WebviewWindowExt,
 };
