@@ -33,13 +33,13 @@ pub fn get_mouse_pos() -> anyhow::Result<(i32, i32)> {
 }
 
 pub fn capture_around_cursor(
-    app_state: State<'_, AppState>,
+    screen_cache: &ScreenCache,
     half_w: i32,
     half_h: i32,
 ) -> anyhow::Result<(DynamicImage, i32, i32)> {
     let (mx, my) = get_mouse_pos()?;
 
-    let screens = &app_state.screen_cache.screens;
+    let screens = &screen_cache.screens;
     let screen = screens
         .iter()
         .find(|s| {

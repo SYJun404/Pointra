@@ -1,14 +1,13 @@
-use objc2::rc::Retained;
-use objc2::AnyThread;
+use objc2::{rc::Retained, AnyThread};
 use objc2_core_foundation::{CGPoint, CGRect, CGSize};
-use objc2_foundation::{NSArray, NSData, NSDictionary, NSString};
+use objc2_foundation::{NSArray, NSData, NSDictionary};
 use objc2_vision::{
     VNImageRequestHandler, VNRecognizeTextRequest, VNRecognizedTextObservation, VNRequest,
     VNRequestTextRecognitionLevel,
 };
+use std::sync::{Arc, Mutex};
 
 // ── 数据结构 ──────────────────────────────────────────────
-
 #[derive(Debug, Clone)]
 pub struct WordBox {
     pub text: String,
@@ -19,18 +18,76 @@ pub struct WordBox {
     pub h: f64,
 }
 
-// ── 分词（移植自 OCRService.swift）────────────────────────
+// ── Tauri State：缓存启动时初始化的 OCR 配置 ──────────────
+pub struct OcrState {
+    /// 复用的 VNRecognizeTextRequest（已配置好语言和精度）
+    pub request: Mutex<Retained<VNRecognizeTextRequest>>,
+}
 
+// SAFETY: VNRecognizeTextRequest 在 Mutex 保护下跨线程使用
+unsafe impl Send for OcrState {}
+unsafe impl Sync for OcrState {}
+
+impl OcrState {
+    /// 应在 Tauri setup() 中调用一次，初始化并缓存 request。
+    /// 内部会用一张小白图做一次预热推理，把 CoreML 模型加载
+    /// 提前到启动阶段，消除首次识别的 1-3 秒延迟。
+    pub fn new() -> Arc<Self> {
+        let request = unsafe { build_english_request() };
+        let state = Arc::new(Self {
+            request: Mutex::new(request),
+        });
+        // clone 一份引用交给后台预热线程，不阻塞 UI 启动
+        warmup_async(Arc::clone(&state));
+        state
+    }
+}
+
+/// 构建支持中英混排的 VNRecognizeTextRequest，只执行一次。
+unsafe fn build_english_request() -> Retained<VNRecognizeTextRequest> {
+    let request = VNRecognizeTextRequest::new();
+    request.setRecognitionLevel(VNRequestTextRecognitionLevel::Accurate);
+    request.setUsesLanguageCorrection(true);
+    request.setAutomaticallyDetectsLanguage(true);
+    request
+}
+
+/// 在独立线程里跑一次空白图推理，预热 CoreML / ANE
+fn warmup_async(state: Arc<OcrState>) {
+    std::thread::spawn(move || {
+        if let Err(e) = warmup_once(&state) {
+            eprintln!("[OCR warmup] 预热失败（不影响功能）: {e}");
+        } else {
+            eprintln!("[OCR warmup] 预热完成");
+        }
+    });
+}
+
+/// 构造一张 64×64 纯白 PNG，跑一次完整推理以触发模型加载
+fn warmup_once(state: &OcrState) -> anyhow::Result<()> {
+    use image::{ImageBuffer, Luma};
+    let img = ImageBuffer::<Luma<u8>, _>::from_pixel(64, 64, Luma([255u8]));
+    let dyn_img = image::DynamicImage::ImageLuma8(img);
+    // 结果丢弃，只需模型完成一次完整推理
+    let _ = recognize_words(&dyn_img, state)?;
+    Ok(())
+}
+
+// ── 分词（中英混排感知）──────────────────────────────────
+
+#[inline]
 fn is_token_char(c: char) -> bool {
     c.is_ascii_alphabetic()
 }
 
+#[inline]
 fn is_uppercase(c: char) -> bool {
-    c.is_uppercase() && c.is_alphabetic()
+    c.is_ascii_uppercase()
 }
 
+#[inline]
 fn is_lowercase(c: char) -> bool {
-    c.is_lowercase() && c.is_alphabetic()
+    c.is_ascii_lowercase()
 }
 
 /// CamelCase 拆分：HelloWorld → [Hello, World]
@@ -66,6 +123,7 @@ fn refined_latin_ranges(s: &str) -> Vec<std::ops::Range<usize>> {
             prev = None;
         }
     }
+
     if let Some(s) = start {
         ranges.push(s..s_byte_end(s, &chars));
     }
@@ -82,6 +140,7 @@ fn s_byte_end(start: usize, chars: &[(usize, char)]) -> usize {
         .unwrap_or(start)
 }
 
+/// 脚本类型：用于区分拉丁字母段、汉字段、其他字母段
 #[derive(PartialEq)]
 enum TokenKind {
     Latin,
@@ -93,13 +152,12 @@ fn token_kind(c: char) -> Option<TokenKind> {
     if c.is_ascii_alphabetic() {
         return Some(TokenKind::Latin);
     }
-    // CJK Unified Ideographs 范围
     let cp = c as u32;
-    if (0x4E00..=0x9FFF).contains(&cp)
-        || (0x3400..=0x4DBF).contains(&cp)
-        || (0x20000..=0x2A6DF).contains(&cp)
+    if (0x4E00..=0x9FFF).contains(&cp)   // CJK 统一表意文字
+        || (0x3400..=0x4DBF).contains(&cp) // CJK 扩展 A
+        || (0x20000..=0x2A6DF).contains(&cp) // CJK 扩展 B
         || (0x3040..=0x30FF).contains(&cp)
-    // Hiragana/Katakana
+    // 平假名 / 片假名
     {
         return Some(TokenKind::Han);
     }
@@ -109,7 +167,9 @@ fn token_kind(c: char) -> Option<TokenKind> {
     None
 }
 
-/// 脚本感知分词：拉丁/汉字/其他字母分段，拉丁段再做 CamelCase 拆分
+/// 脚本感知分词：拉丁段做 CamelCase 拆分，汉字段每字单独成 token。
+/// 这样 "调用APIRequest时" 会产生 ["API", "Request", "时"] 三个 token，
+/// 保证中英混排行里的英文单词都能被正确提取并定位。
 fn script_aware_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
     let chars: Vec<(usize, char)> = text.char_indices().collect();
     let mut ranges = Vec::new();
@@ -132,7 +192,7 @@ fn script_aware_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
         }
     };
 
-    for (_i, &(byte_idx, c)) in chars.iter().enumerate() {
+    for &(byte_idx, c) in &chars {
         match token_kind(c) {
             Some(k) => match &cur_kind {
                 None => {
@@ -156,34 +216,42 @@ fn script_aware_ranges(text: &str) -> Vec<std::ops::Range<usize>> {
             }
         }
     }
-    // 末尾 flush
     if let (Some(ss), Some(ck)) = (seg_start, &cur_kind) {
-        let end = text.len();
-        flush(ss, end, ck, &mut ranges);
+        flush(ss, text.len(), ck, &mut ranges);
     }
     ranges
 }
 
+/// token 包含至少一个英文字母（汉字行里的中文 token 会被过滤掉，只保留英文）
+#[inline]
 fn contains_letter(s: &str) -> bool {
-    s.chars().any(|c| {
-        c.is_alphabetic() || {
-            let cp = c as u32;
-            (0x4E00..=0x9FFF).contains(&cp)
-        }
-    })
+    s.bytes().any(|b| b.is_ascii_alphabetic())
 }
 
 // ── BBox 计算 ─────────────────────────────────────────────
 
-/// 字符数比例 fallback
 fn fallback_box(text_box: CGRect, text: &str, range: &std::ops::Range<usize>) -> Option<CGRect> {
-    let total = text.chars().count();
+    // 纯 ASCII 路径：字符数 == 字节数，避免 chars().count() 的 O(n) 扫描
+    let total = if text.is_ascii() {
+        text.len()
+    } else {
+        text.chars().count()
+    };
     if total == 0 {
         return None;
     }
 
-    let start_chars = text[..range.start].chars().count();
-    let end_chars = text[..range.end].chars().count();
+    let start_chars = if text.is_ascii() {
+        range.start
+    } else {
+        text[..range.start].chars().count()
+    };
+    let end_chars = if text.is_ascii() {
+        range.end
+    } else {
+        text[..range.end].chars().count()
+    };
+
     if end_chars <= start_chars {
         return None;
     }
@@ -264,41 +332,31 @@ fn resolved_box(
     fallback
 }
 
-// ── Vision OCR ────────────────────────────────────────────
-
-pub fn recognize_words(img: &image::DynamicImage) -> anyhow::Result<Vec<WordBox>> {
+// ── Vision OCR（使用缓存 State）──────────────────────────
+pub fn recognize_words(
+    img: &image::DynamicImage,
+    state: &OcrState,
+) -> anyhow::Result<Vec<WordBox>> {
     let mut png: Vec<u8> = Vec::new();
     img.write_to(&mut std::io::Cursor::new(&mut png), image::ImageFormat::Png)?;
 
     unsafe {
         let ns_data = NSData::with_bytes(&png);
 
-        let request = VNRecognizeTextRequest::new();
-        request.setRecognitionLevel(VNRequestTextRecognitionLevel::Accurate);
-        request.setUsesLanguageCorrection(true);
-
-        // macOS 13+ 自动语言检测
-        #[cfg(target_os = "macos")]
-        {
-            use objc2::msg_send;
-            let os_ver: f64 = {
-                let ver: objc2_foundation::NSOperatingSystemVersion =
-                    objc2_foundation::NSProcessInfo::processInfo().operatingSystemVersion();
-                ver.majorVersion as f64 + ver.minorVersion as f64 / 10.0
-            };
-            if os_ver >= 13.0 {
-                let _: () = msg_send![&*request, setAutomaticallyDetectsLanguage: true];
-            } else {
-                let en = NSString::from_str("en-US");
-                let zh = NSString::from_str("zh-Hans");
-                let langs = NSArray::from_retained_slice(&[en, zh]);
-                request.setRecognitionLanguages(&langs);
-            }
-        }
+        // 从 State 取出已配置好的 request，无需重建
+        let request = state
+            .request
+            .lock()
+            .map_err(|_| anyhow::anyhow!("OcrState mutex poisoned"))?;
 
         // 向上转型 VNRecognizeTextRequest → VNRequest
-        let request_ptr = &*request as *const VNRecognizeTextRequest;
-        let as_vn: Retained<VNRequest> = request.into_super().into_super();
+        // clone retained pointer 以构造 NSArray，不移动 request
+        let as_vn: Retained<VNRequest> = {
+            let ptr = &**request as *const VNRecognizeTextRequest;
+            // SAFETY: VNRecognizeTextRequest 继承自 VNRequest
+            Retained::retain(ptr as *mut VNRequest)
+                .ok_or_else(|| anyhow::anyhow!("retain VNRequest failed"))?
+        };
         let requests = NSArray::from_retained_slice(&[as_vn]);
 
         let handler = VNImageRequestHandler::initWithData_options(
@@ -311,7 +369,7 @@ pub fn recognize_words(img: &image::DynamicImage) -> anyhow::Result<Vec<WordBox>
             .performRequests_error(&requests)
             .map_err(|e| anyhow::anyhow!("Vision 执行失败: {:?}", e))?;
 
-        // 从原始指针取结果
+        let request_ptr = &**request as *const VNRecognizeTextRequest;
         let results: Retained<NSArray<VNRecognizedTextObservation>> = (*request_ptr)
             .results()
             .ok_or_else(|| anyhow::anyhow!("OCR 无结果"))?;
@@ -328,20 +386,28 @@ pub fn recognize_words(img: &image::DynamicImage) -> anyhow::Result<Vec<WordBox>
             let text: String = candidate.string().to_string();
             let text_box: CGRect = obs.boundingBox();
 
-            // 对整行文字做脚本感知分词
+            // 脚本感知分词：中英混排行里拉丁段做 CamelCase 拆分
             for byte_range in script_aware_ranges(&text) {
                 let token = &text[byte_range.clone()];
                 if !contains_letter(token) {
                     continue;
                 }
 
-                // 尝试 Vision 精确 BBox
+                // 尝试 Vision 精确 BBox（UTF-16 偏移）
                 let precise: Option<CGRect> = {
-                    // 把字节 range 转为 NSRange（UTF-16 偏移）
-                    let utf16_start = text[..byte_range.start].encode_utf16().count();
-                    let utf16_len = text[byte_range.start..byte_range.end]
-                        .encode_utf16()
-                        .count();
+                    // 纯 ASCII 时 UTF-16 偏移 == 字节偏移，直接用 len()
+                    let utf16_start = if text[..byte_range.start].is_ascii() {
+                        byte_range.start
+                    } else {
+                        text[..byte_range.start].encode_utf16().count()
+                    };
+                    let utf16_len = if text[byte_range.start..byte_range.end].is_ascii() {
+                        byte_range.end - byte_range.start
+                    } else {
+                        text[byte_range.start..byte_range.end]
+                            .encode_utf16()
+                            .count()
+                    };
                     let ns_range = objc2_foundation::NSRange {
                         location: utf16_start,
                         length: utf16_len,
@@ -371,8 +437,7 @@ pub fn recognize_words(img: &image::DynamicImage) -> anyhow::Result<Vec<WordBox>
     }
 }
 
-// ── 命中检测（移植自 selectWord）─────────────────────────
-
+// ── 命中检测 ──────────────────────────────────────
 pub fn select_word(words: &[WordBox], nx: f64, ny: f64) -> Option<String> {
     let nearest = |tolerance: f64| -> Option<&WordBox> {
         let candidates: Vec<&WordBox> = words
@@ -384,7 +449,6 @@ pub fn select_word(words: &[WordBox], nx: f64, ny: f64) -> Option<String> {
                     && ny <= w.y + w.h + tolerance
             })
             .collect();
-
         candidates.into_iter().min_by(|a, b| {
             let da = ((a.x + a.w / 2.0 - nx).powi(2) + (a.y + a.h / 2.0 - ny).powi(2)).sqrt();
             let db = ((b.x + b.w / 2.0 - nx).powi(2) + (b.y + b.h / 2.0 - ny).powi(2)).sqrt();

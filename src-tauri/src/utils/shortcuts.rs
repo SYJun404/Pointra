@@ -65,14 +65,11 @@ fn show_window<R: Runtime>(window: WebviewWindow<R>) {
 
 pub fn get_word_under_cursor(app_state: State<'_, AppState>) -> Result<String, String> {
     let (img, rel_x, rel_y) =
-        capture_around_cursor(app_state, 200, 40).map_err(|e| e.to_string())?;
-
-    println!("截图成功！相对坐标: ({}, {})", rel_x, rel_y);
+        capture_around_cursor(&app_state.screen_cache, 200, 40).map_err(|e| e.to_string())?;
 
     #[cfg(target_os = "macos")]
     {
-        let words = recognize_words(&img).map_err(|e| e.to_string())?;
-        // println!("{:?}", words);
+        let words = recognize_words(&img, &app_state.ocr_state).map_err(|e| e.to_string())?;
 
         // 归一化坐标；Vision Y 轴翻转
         let nx = rel_x as f64 / img.width() as f64;
