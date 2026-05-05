@@ -37,10 +37,8 @@
             "icons/icon.ico"
         ],
         "macOS": {
-            "frameworks": [],
-            "exceptionDomain": "",
-            "signingIdentity": null,
-            "entitlements": null
+            "entitlements": "./entitlements.plist",
+            "infoPlist": "./info.plist"
         }
     }
 }

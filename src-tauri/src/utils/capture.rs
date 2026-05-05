@@ -1,9 +1,6 @@
-// capture.rs
-use crate::AppState;
 use image::DynamicImage;
 use mouse_position::mouse_position::Mouse;
 use screenshots::Screen;
-use tauri::State;
 
 pub struct ScreenCache {
     // 缓存所有屏幕对象

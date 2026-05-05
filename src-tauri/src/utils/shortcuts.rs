@@ -1,11 +1,8 @@
-use super::capture::capture_around_cursor;
-use super::ocr_mac::{recognize_words, select_word};
-use crate::AppState;
+use device_query::{DeviceQuery, DeviceState, Keycode};
 use mouse_position::mouse_position::Mouse;
-use std::error::Error;
-use tauri::State;
-use tauri::{App, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
+use std::thread;
+use std::time::Duration;
+use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
 
 fn show_window<R: Runtime>(window: WebviewWindow<R>) {
     // 1. 获取鼠标当前全局坐标
@@ -63,55 +60,36 @@ fn show_window<R: Runtime>(window: WebviewWindow<R>) {
     }
 }
 
-pub fn get_word_under_cursor(app_state: State<'_, AppState>) -> Result<String, String> {
-    let (img, rel_x, rel_y) =
-        capture_around_cursor(&app_state.screen_cache, 200, 40).map_err(|e| e.to_string())?;
+pub fn init_ctrl_listener(app_handle: AppHandle) {
+    thread::spawn(move || {
+        let device_state = DeviceState::new();
+        let mut last_state = false; // false 代表松开，true 代表按下
 
-    #[cfg(target_os = "macos")]
-    {
-        let words = recognize_words(&img, &app_state.ocr_state).map_err(|e| e.to_string())?;
+        loop {
+            let keys = device_state.get_keys();
 
-        // 归一化坐标；Vision Y 轴翻转
-        let nx = rel_x as f64 / img.width() as f64;
-        let ny = 1.0 - rel_y as f64 / img.height() as f64;
+            // 检查是否按下了任意一个 Ctrl 键
+            let is_pressed = keys.contains(&Keycode::LControl);
 
-        let word = select_word(&words, nx, ny).unwrap_or_default();
-        return Ok(word);
-    }
-}
-pub fn setup_shortcuts<R: Runtime>(app: &mut App<R>) -> Result<(), Box<dyn Error>> {
-    // 1. 获取 AppHandle
-    let handle = app.handle().clone();
+            // 只有当状态发生改变时才触发逻辑
+            if is_pressed != last_state {
+                last_state = is_pressed;
 
-    // 2. 定义快捷键
-    let ctrl_f1 = Shortcut::new(Some(Modifiers::CONTROL), Code::F1);
+                let handle = app_handle.clone();
 
-    // 3. 注册插件
-    app.handle().plugin(
-        tauri_plugin_global_shortcut::Builder::new()
-            .with_handler(move |app_handle, shortcut, event| {
-                if shortcut == &ctrl_f1 && event.state() == ShortcutState::Pressed {
-                    if let Some(window) = app_handle.get_webview_window("main") {
-                        let is_visible = window.is_visible().unwrap_or(false);
-                        if is_visible {
-                            let _ = window.hide();
-                        } else {
-                            let test = get_word_under_cursor(app_handle.state::<AppState>());
-                            if let Ok(result) = test {
-                                println!("word: {:#?}", result);
-                            } else {
-                                println!("error")
-                            }
-                            // show_window(window);
-                        }
+                if let Some(window) = handle.get_webview_window("main") {
+                    if is_pressed {
+                        // 按下：显示并聚焦
+                        show_window(window);
+                    } else {
+                        // 松开：隐藏
+                        window.hide().unwrap();
                     }
                 }
-            })
-            .build(),
-    )?;
+            }
 
-    // 4. 注册快捷键
-    handle.global_shortcut().register(ctrl_f1)?;
-
-    Ok(())
+            // 轮询间隔：10-16ms (大约 60-100Hz)，既保证了响应速度，又不会消耗太多 CPU
+            thread::sleep(Duration::from_millis(33));
+        }
+    });
 }

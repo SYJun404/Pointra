@@ -28,6 +28,7 @@ mouse_position = "0.1.4"
 anyhow = "1"
 screenshots = "0.8.10"
 image = "0.25.10"
+device_query = "4.0.1"
 
 
 
