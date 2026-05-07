@@ -14,30 +14,33 @@ export function useWindowShortcut() {
     }, []);
 }
 
-export function useOnWindowShow(callback: () => void) {
-    const savedCallback = useRef(callback);
+export function useOnWindowChange(onShow: () => void, onHide: () => void) {
+    const savedOnShow = useRef(onShow);
+    const savedOnHide = useRef(onHide);
 
     useEffect(() => {
-        savedCallback.current = callback;
-    }, [callback]);
+        savedOnShow.current = onShow;
+    }, [onShow]);
 
     useEffect(() => {
-        let unlisten: (() => void) | undefined;
+        savedOnHide.current = onHide;
+    }, [onHide]);
 
+    useEffect(() => {
         async function setupListener() {
             const appWindow = getCurrentWindow();
-            const unlistenFunc = await appWindow.listen("tauri://focus", () => {
-                savedCallback.current();
+
+            // 监听窗口显示/获得焦点事件
+            await appWindow.listen("tauri://focus", () => {
+                savedOnShow.current();
             });
 
-            unlisten = unlistenFunc;
+            // 监听窗口隐藏/失焦事件
+            await appWindow.listen("tauri://blur", () => {
+                savedOnHide.current();
+            });
         }
 
         setupListener();
-
-        // 组件卸载时取消监听，防止内存泄漏
-        return () => {
-            if (unlisten) unlisten();
-        };
     }, []);
 }

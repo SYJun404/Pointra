@@ -83,7 +83,7 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
                         show_window(window);
                     } else {
                         // 松开：隐藏
-                        window.hide().unwrap();
+                        // window.hide().unwrap();
                     }
                 }
             }
