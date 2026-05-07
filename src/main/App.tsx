@@ -2,7 +2,7 @@ import "../assets/css/App.css";
 import { useWindowShortcut, useOnWindowChange } from "./utils/useCustom";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
-import Header from "./components/header";
+import Header from "./components/Header";
 
 function App() {
     const [word, setword] = useState<string>("");
