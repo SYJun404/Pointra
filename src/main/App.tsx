@@ -3,6 +3,8 @@ import { useWindowShortcut, useOnWindowChange } from "./utils/useCustom";
 import { invoke } from "@tauri-apps/api/core";
 import { useState } from "react";
 import Header from "./components/Header";
+import Content from "./components/Content";
+import Footer from "./components/Footer";
 
 function App() {
     const [word, setword] = useState<string>("");
@@ -21,8 +23,10 @@ function App() {
     );
 
     return (
-        <div className="m-3">
+        <div className="pt-3 flex flex-col gap-3 h-screen overflow-hidden">
             <Header />
+            <Content />
+            <Footer />
         </div>
     );
 }

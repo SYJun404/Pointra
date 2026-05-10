@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "@heroui/styles";
 
 @font-face {
     font-family: "DingTalk";
@@ -6,17 +7,37 @@
 }
 @theme {
     --font-DingTalk: "DingTalk";
-    --color-mainTitleW: "#1A1A1A";
+    /*背景层次*/
+    --color-subBgW: #fafafa;
+
+    /*边框 / 分隔*/
+    --color-borderMainW: #e8e8e8;
+    --color-borderSubW: #f0f0f0;
+
+    /*文字层次*/
+    --color-mainTitleW: #1a1a1a;
+    --color-tagW: #bbbbbb;
+
+    /*强调色*/
+    --color-stateGreenW: #34c759;
+    --color-mainBlueW: #4a90d9;
 }
 
 :root {
-    border-radius: 12px;
+    border-radius: 16px;
     background-color: #ffffff;
-
+    font-family: var(--font-DingTalk);
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
     overflow: hidden;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+img {
+    user-select: none;
+    -webkit-user-drag: none;
 }
