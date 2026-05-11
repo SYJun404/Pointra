@@ -1,14 +1,14 @@
-import { Function, Gear, Magnifier } from "@gravity-ui/icons";
+import { Clock, Gear, Magnifier } from "@gravity-ui/icons";
 
 function Footer() {
     const ACTION_BUTTONS = [
         {
-            id: "settings",
-            icon: <Gear color="#bbbbbb" height={14} width={14} />,
-        },
-        {
             id: "search",
             icon: <Magnifier color="#bbbbbb" height={14} width={14} />,
+        },
+        {
+            id: "settings",
+            icon: <Gear color="#bbbbbb" height={14} width={14} />,
         },
     ];
 
@@ -31,8 +31,8 @@ function Footer() {
     return (
         <div className="mt-auto bg-subBgW h-10 px-3 py-2 rounded-b-3xl border-t border-borderSubW">
             <div className="flex items-center h-full relative gap-2">
-                <Function color="#bbbbbb" width={18} height={18} />
-                <p className="text-[11px] text-tagW absolute left-5.5 top-1">
+                <Clock color="#bbbbbb" width={16} height={16} />
+                <p className="text-[11px] text-tagW absolute left-5 top-1">
                     今日已翻译
                     <text className="text-mainBlueW"> 24 </text>次
                 </p>

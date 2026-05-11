@@ -9,6 +9,7 @@
     --font-DingTalk: "DingTalk";
     /*背景层次*/
     --color-subBgW: #fafafa;
+    --color-tagBgW: #f5f5f5;
 
     /*边框 / 分隔*/
     --color-borderMainW: #e8e8e8;
@@ -17,10 +18,13 @@
     /*文字层次*/
     --color-mainTitleW: #1a1a1a;
     --color-tagW: #bbbbbb;
+    --color-tagSecondW: #aaaaaa;
 
     /*强调色*/
     --color-stateGreenW: #34c759;
     --color-mainBlueW: #4a90d9;
+    --color-blueBgW: #eaf3fb;
+    --color-blueBorderW: #b3d4f0;
 }
 
 :root {
