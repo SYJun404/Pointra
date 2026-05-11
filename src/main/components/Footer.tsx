@@ -34,7 +34,7 @@ function Footer() {
                 <Clock color="#bbbbbb" width={16} height={16} />
                 <p className="text-[11px] text-tagW absolute left-5 top-1">
                     今日已翻译
-                    <text className="text-mainBlueW"> 24 </text>次
+                    <span className="text-mainBlueW"> 24 </span>次
                 </p>
 
                 <div className="ml-auto flex gap-1.5">

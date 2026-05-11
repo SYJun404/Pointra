@@ -1,6 +1,16 @@
 import { Volume } from "@gravity-ui/icons";
+import { useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 function Content() {
+    useEffect(() => {
+        invoke("query_word", { word: "test" })
+            .then((result) => {
+                console.log(result);
+            })
+            .catch((error) => console.error(error));
+    }, []);
+
     return (
         <div className="mx-3 p-3 flex-1 border-borderMainW border rounded-xl">
             <main className="flex flex-col gap-2">
