@@ -1,9 +1,8 @@
 use crate::commands::word::get_data_under_cursor;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use mouse_position::mouse_position::Mouse;
-use std::thread;
-use std::time::Duration;
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
+use tokio::time::{self, Duration};
 
 pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
     // 1. 获取鼠标当前全局坐标
@@ -59,32 +58,31 @@ pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
 }
 
 pub fn init_ctrl_listener(app_handle: AppHandle) {
-    thread::spawn(move || {
+    tauri::async_runtime::spawn(async move {
         let device_state = DeviceState::new();
-        let mut last_state = false; // false 代表松开，true 代表按下
+        let mut last_state = false;
+
+        let mut interval = time::interval(Duration::from_millis(33));
 
         loop {
-            let keys = device_state.get_keys();
+            // 等待计时器，防止占用 100% CPU
+            interval.tick().await;
 
-            // 检查是否按下了任意一个 Ctrl 键
+            let keys = device_state.get_keys();
             let is_pressed = keys.contains(&Keycode::LControl);
 
-            // 只有当状态发生改变时才触发逻辑
             if is_pressed != last_state {
                 last_state = is_pressed;
 
+                // 获取窗口句柄
                 if let Some(window) = app_handle.get_webview_window("main") {
                     if is_pressed {
                         get_data_under_cursor(app_handle.state(), window);
                     } else {
-                        // 松开：隐藏
-                        window.hide().unwrap();
+                        let _ = window.hide();
                     }
                 }
             }
-
-            // 轮询间隔：10-16ms (大约 60-100Hz)，既保证了响应速度，又不会消耗太多 CPU
-            thread::sleep(Duration::from_millis(33));
         }
     });
 }
