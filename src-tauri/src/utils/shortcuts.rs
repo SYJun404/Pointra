@@ -1,10 +1,11 @@
+use crate::commands::word::get_data_under_cursor;
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use mouse_position::mouse_position::Mouse;
 use std::thread;
 use std::time::Duration;
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
 
-fn show_window<R: Runtime>(window: WebviewWindow<R>) {
+pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
     // 1. 获取鼠标当前全局坐标
     if let Mouse::Position { x, y } = Mouse::get_mouse_position() {
         // 2. 获取当前显示器信息
@@ -29,16 +30,15 @@ fn show_window<R: Runtime>(window: WebviewWindow<R>) {
             // 检测右边缘：鼠标位置 + 偏移 + 窗口宽度 > 显示器右边界
             let monitor_right_edge = monitor_pos.x + monitor_size.width as i32;
             if final_x + (window_size.width as i32) > monitor_right_edge {
-                // 改为显示在右侧但有间隙
-                final_x = (monitor_size.width - window_size.width) as i32 + offset;
-                final_y = final_y + offset;
+                // 让窗口贴住右边框，并留出 offset 间隙
+                final_x = monitor_right_edge - (window_size.width as i32) - offset;
+                // 轴向微调：让窗口稍微向下错位，避免遮挡光标中心
+                final_y += offset;
             }
 
-            // 检测底边缘：鼠标位置 + 偏移 + 窗口高度 > 显示器底边界
             let monitor_bottom_edge = monitor_pos.y + monitor_size.height as i32;
             if final_y + (window_size.height as i32) > monitor_bottom_edge {
-                // 改为显示在鼠标上方
-                final_y = y - (window_size.height as i32) + offset;
+                final_y = monitor_bottom_edge - (window_size.height as i32) - offset;
             }
 
             // --- 兜底逻辑：防止窗口超出左边缘或顶边缘 ---
@@ -51,11 +51,9 @@ fn show_window<R: Runtime>(window: WebviewWindow<R>) {
                 y: final_y,
             });
 
-            std::thread::spawn(move || {
-                std::thread::sleep(std::time::Duration::from_millis(10)); // 10ms延迟
-                let _ = window.show();
-                let _ = window.set_focus();
-            });
+            std::thread::sleep(std::time::Duration::from_millis(10));
+            let _ = window.show();
+            let _ = window.set_focus();
         }
     }
 }
@@ -75,15 +73,12 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
             if is_pressed != last_state {
                 last_state = is_pressed;
 
-                let handle = app_handle.clone();
-
-                if let Some(window) = handle.get_webview_window("main") {
+                if let Some(window) = app_handle.get_webview_window("main") {
                     if is_pressed {
-                        // 按下：显示并聚焦
-                        show_window(window);
+                        get_data_under_cursor(app_handle.state(), window);
                     } else {
                         // 松开：隐藏
-                        // window.hide().unwrap();
+                        window.hide().unwrap();
                     }
                 }
             }

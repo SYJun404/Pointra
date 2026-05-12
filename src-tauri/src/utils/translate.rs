@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use tauri::State;
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct DictResponse {
     voice: Value,
     translate: Value,
@@ -15,7 +15,6 @@ pub struct DictResponse {
 
 #[derive(Deserialize)]
 struct SogouRawResponse {
-    info: String,
     data: Option<SogouData>,
 }
 
@@ -41,6 +40,31 @@ struct TranslationParams {
     exchange: bool,
 }
 
+#[derive(Serialize, Clone)]
+pub struct TransResult {
+    status: i16,
+    msg: Option<String>,
+    data: Option<DictResponse>,
+}
+
+impl TransResult {
+    pub fn success(data: DictResponse) -> Self {
+        Self {
+            status: 200,
+            data: Some(data),
+            msg: None,
+        }
+    }
+
+    pub fn fail(err_msg: String) -> Self {
+        Self {
+            status: -1,
+            data: None,
+            msg: Some(err_msg),
+        }
+    }
+}
+
 fn generate_s_token(text: &str) -> String {
     let from = "auto";
     let to = "zh-CHS";
@@ -55,7 +79,6 @@ fn generate_s_token(text: &str) -> String {
 fn build_headers() -> HeaderMap {
     let mut headers = HeaderMap::new();
 
-    // 标准 Header
     headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"));
     headers.insert(
         REFERER,
@@ -79,15 +102,14 @@ fn build_headers() -> HeaderMap {
     headers
 }
 
-#[tauri::command]
-pub async fn query_word(word: String, state: State<'_, AppState>) -> Result<DictResponse, String> {
+pub async fn fetch_translation(word: &str, state: &AppState) -> Result<DictResponse, String> {
     let url = "https://fanyi.sogou.com/api/transpc/text/result";
-    let token = generate_s_token(&word);
+    let token = generate_s_token(word);
 
     let params = TranslationParams {
         from: "auto".to_string(),
         to: "zh-CHS".to_string(),
-        text: word,
+        text: word.to_string(),
         client: "pc".to_string(),
         fr: "browser_pc".to_string(),
         need_qc: 1,
@@ -96,16 +118,14 @@ pub async fn query_word(word: String, state: State<'_, AppState>) -> Result<Dict
         exchange: false,
     };
 
-    let response = state
+    let raw_res: SogouRawResponse = state
         .client
         .post(url)
         .headers(build_headers())
         .json(&params)
         .send()
         .await
-        .map_err(|e| format!("Network error: {}", e))?;
-
-    let raw_res: SogouRawResponse = response
+        .map_err(|e| format!("Network error: {}", e))?
         .json()
         .await
         .map_err(|e| format!("Failed to parse JSON: {}", e))?;
@@ -117,4 +137,12 @@ pub async fn query_word(word: String, state: State<'_, AppState>) -> Result<Dict
         translate: data.translate,
         word_card: data.word_card,
     })
+}
+
+#[tauri::command]
+pub async fn fetch_trans_res(state: State<'_, AppState>, word: String) -> Result<TransResult, ()> {
+    match fetch_translation(&word, &state).await {
+        Ok(data) => Ok(TransResult::success(data)),
+        Err(err_msg) => Ok(TransResult::fail(err_msg)),
+    }
 }

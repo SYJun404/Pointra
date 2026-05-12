@@ -1,13 +1,12 @@
 mod commands;
 mod utils;
 use commands::window::apply_window_effects;
-use commands::word::get_word_under_cursor;
 use reqwest::Client;
 use std::sync::Arc;
 use utils::capture::ScreenCache;
 use utils::ocr_mac::OcrState;
 use utils::shortcuts::init_ctrl_listener;
-use utils::translate::query_word;
+use utils::translate::fetch_trans_res;
 use uuid::Uuid;
 
 pub struct AppState {
@@ -28,8 +27,7 @@ pub fn run() {
         // 注册命令
         .invoke_handler(tauri::generate_handler![
             apply_window_effects,
-            get_word_under_cursor,
-            query_word
+            fetch_trans_res
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]
