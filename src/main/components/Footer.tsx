@@ -1,4 +1,5 @@
 import { Clock, Gear, Magnifier } from "@gravity-ui/icons";
+import logo from "../../assets/icon/pointraInApp.png";
 
 function Footer() {
     const ACTION_BUTTONS = [
@@ -31,7 +32,7 @@ function Footer() {
     return (
         <div className="mt-auto bg-subBgW h-10 px-3 py-2 rounded-b-3xl border-t border-borderSubW">
             <div className="flex items-center h-full relative gap-2">
-                <Clock color="#bbbbbb" width={16} height={16} />
+                <img className="w-4 h-4" src={logo}></img>
                 <p className="text-[11px] text-tagW absolute left-5 top-1">
                     今日已翻译
                     <span className="text-mainBlueW"> 24 </span>次

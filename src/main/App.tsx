@@ -16,12 +16,9 @@ function App() {
     // 按下Esc隐藏当前窗口
     useWindowShortcut();
     // 窗口显示时执行的回调
-    useOnWindowChange(
-        async () => {},
-        () => {
-            setTransResult(null);
-        },
-    );
+    useOnWindowChange(() => {
+        setTransResult(null);
+    });
 
     useEffect(() => {
         const setupListener = async () => {
@@ -47,7 +44,6 @@ function App() {
         const listenerPromise = setupListener();
 
         return () => {
-            // React 组件卸载时自动取消监听，防止内存泄漏
             listenerPromise.then((unlisten) => unlisten());
         };
     }, []);

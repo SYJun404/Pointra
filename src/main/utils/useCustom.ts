@@ -14,13 +14,8 @@ export function useWindowShortcut() {
     }, []);
 }
 
-export function useOnWindowChange(onShow: () => void, onHide: () => void) {
-    const savedOnShow = useRef(onShow);
+export function useOnWindowChange(onHide: () => void) {
     const savedOnHide = useRef(onHide);
-
-    useEffect(() => {
-        savedOnShow.current = onShow;
-    }, [onShow]);
 
     useEffect(() => {
         savedOnHide.current = onHide;
@@ -30,14 +25,14 @@ export function useOnWindowChange(onShow: () => void, onHide: () => void) {
         async function setupListener() {
             const appWindow = getCurrentWindow();
 
-            // 监听窗口显示/获得焦点事件
-            await appWindow.listen("tauri://focus", () => {
-                savedOnShow.current();
-            });
-
             // 监听窗口隐藏/失焦事件
             await appWindow.listen("tauri://blur", () => {
-                savedOnHide.current();
+                // 判断窗口是否为隐藏状态
+                appWindow.isVisible().then((isShow) => {
+                    if (!isShow) {
+                        savedOnHide.current();
+                    }
+                });
             });
         }
 
