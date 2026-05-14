@@ -1,6 +1,7 @@
-use crate::commands::word::get_data_under_cursor;
+use crate::{commands::word::get_data_under_cursor, AppState};
 use device_query::{DeviceQuery, DeviceState, Keycode};
 use mouse_position::mouse_position::Mouse;
+use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
 use tokio::time::{self, Duration};
 
@@ -61,25 +62,39 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
         let device_state = DeviceState::new();
         let mut last_state = false;
-
         let mut interval = time::interval(Duration::from_millis(33));
+        let appstate = app_handle.state::<AppState>();
 
         loop {
-            // 等待计时器，防止占用 100% CPU
             interval.tick().await;
 
             let keys = device_state.get_keys();
-            let is_pressed = keys.contains(&Keycode::LControl);
+            let is_pressed = keys.contains(&Keycode::RShift);
+
+            // 获取前端同步过来的鼠标状态
+            let is_hovered = appstate.window_locked.load(Ordering::Relaxed);
 
             if is_pressed != last_state {
                 last_state = is_pressed;
 
-                // 获取窗口句柄
                 if let Some(window) = app_handle.get_webview_window("main") {
                     if is_pressed {
+                        appstate.window_locked.store(false, Ordering::Relaxed);
                         get_data_under_cursor(app_handle.state(), window);
                     } else {
-                        // let _ = window.hide();
+                        // 松开按键：如果鼠标在窗口内，则不隐藏
+                        if !is_hovered {
+                            let _ = window.hide();
+                        }
+                    }
+                }
+            }
+            // 如果按键已经松开，且鼠标从窗口内移出到窗口外，此时应该隐藏窗口
+            if !is_pressed && !is_hovered {
+                if let Some(window) = app_handle.get_webview_window("main") {
+                    // 只有当窗口可见时才调用 hide，避免无效操作
+                    if window.is_visible().unwrap_or(false) {
+                        let _ = window.hide();
                     }
                 }
             }

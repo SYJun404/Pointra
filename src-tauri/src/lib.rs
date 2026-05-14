@@ -1,7 +1,8 @@
 mod commands;
 mod utils;
-use commands::window::apply_window_effects;
+use commands::window::{apply_window_effects, update_hover_status};
 use reqwest::Client;
+use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use utils::capture::ScreenCache;
 use utils::ocr_mac::OcrState;
@@ -12,6 +13,7 @@ pub struct AppState {
     screen_cache: ScreenCache,
     ocr_state: Arc<OcrState>,
     client: Client,
+    window_locked: Arc<AtomicBool>,
 }
 
 pub fn run() {
@@ -20,10 +22,12 @@ pub fn run() {
             screen_cache: ScreenCache::new(),
             ocr_state: OcrState::new(),
             client: Client::new(),
+            window_locked: Arc::new(AtomicBool::new(false)),
         })
         // 注册命令
         .invoke_handler(tauri::generate_handler![
             apply_window_effects,
+            update_hover_status,
             fetch_trans_res
         ])
         .setup(|app| {

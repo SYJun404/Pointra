@@ -1,25 +1,13 @@
 import { Volume, Ellipsis } from "@gravity-ui/icons";
 import { TransResultTypes, UsualDict } from "../types/transResult";
-import { Skeleton } from "@heroui/react";
+import Loading from "./Loading";
 
 function Content({ transResult }: { transResult: TransResultTypes | null }) {
     if (transResult === null) {
-        return (
-            <div className="mx-3 flex flex-col p-3 pt-2.5 flex-1 min-h-0 border-borderMainW border rounded-xl">
-                <div className="shadow-panel w-62.5 space-y-5 rounded-lg bg-transparent p-4">
-                    <Skeleton className="h-32 rounded-lg" />
-                    <div className="space-y-3">
-                        <Skeleton className="h-3 w-3/5 rounded-lg" />
-                        <Skeleton className="h-3 w-4/5 rounded-lg" />
-                        <Skeleton className="h-3 w-2/5 rounded-lg" />
-                    </div>
-                </div>
-            </div>
-        );
+        return <Loading />;
     }
 
     const { wordCard, voice, translate } = transResult.data;
-    console.log(transResult.data);
 
     const posStyles: Record<string, string> = {
         "n.": "bg-blue-50 border border-blue-200 text-blue-600",

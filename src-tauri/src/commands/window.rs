@@ -1,4 +1,6 @@
-use tauri::Manager;
+use crate::AppState;
+use std::sync::atomic::Ordering;
+use tauri::{Manager, State};
 use tauri_nspanel::{
     tauri_panel, CollectionBehavior, PanelLevel, StyleMask, TrackingAreaOptions, WebviewWindowExt,
 };
@@ -33,6 +35,9 @@ pub fn apply_window_effects(window: tauri::Window) {
             .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
 
         if let Some(web_window) = window.get_webview_window("main") {
+            // 打开调试工具
+            // web_window.open_devtools();
+
             let panel = web_window.to_panel::<BasicPanel>().unwrap();
 
             // Set the window to float level
@@ -58,4 +63,10 @@ pub fn apply_window_effects(window: tauri::Window) {
         apply_blur(&window, Some((18, 18, 18, 125)))
             .expect("Unsupported platform! 'apply_blur' is only supported on Windows");
     }
+}
+
+// 更新鼠标是否在窗口内
+#[tauri::command]
+pub fn update_hover_status(hovered: bool, state: State<'_, AppState>) {
+    state.window_locked.store(hovered, Ordering::Relaxed);
 }

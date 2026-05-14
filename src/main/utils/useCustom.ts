@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 
 export function useWindowShortcut() {
     useEffect(() => {
@@ -10,6 +11,14 @@ export function useWindowShortcut() {
             }
         };
         window.addEventListener("keydown", handleKeyDown);
+        // 监听鼠标进入窗口
+        document.body.addEventListener("mouseenter", () => {
+            invoke("update_hover_status", { hovered: true });
+        });
+        // 监听鼠标离开窗口
+        document.body.addEventListener("mouseleave", () => {
+            invoke("update_hover_status", { hovered: false });
+        });
         return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 }
