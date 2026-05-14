@@ -33,6 +33,7 @@ reqwest = { version = "0.13.3", features = ["json"] }
 md5 = "0.8.0"
 uuid = {version = "1.23.1",  features = ["v4", "serde"] }
 tokio = "1.52.3"
+tauri-plugin-store = "2.4.3"
 
 
 

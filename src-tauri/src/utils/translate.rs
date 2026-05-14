@@ -3,7 +3,10 @@ use md5;
 use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE, COOKIE, REFERER, USER_AGENT};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use tauri::State;
+use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::{AppHandle, State};
+use tauri_plugin_store::StoreExt;
+use uuid::Uuid;
 
 #[derive(Serialize, Clone)]
 pub struct DictResponse {
@@ -76,10 +79,106 @@ fn generate_s_token(text: &str) -> String {
     format!("{:x}", digest)
 }
 
-fn build_headers() -> HeaderMap {
+fn now_ms() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
+}
+
+fn is_one_day_apart(ts1: u64, ts2: u64) -> bool {
+    let one_day_ms: u64 = 1000 * 60 * 60 * 24;
+    ts1.abs_diff(ts2) >= one_day_ms
+}
+
+async fn fetch_sogou_cookie(client: &reqwest::Client) -> Result<(String, String), String> {
+    let resp = client
+        .get("https://fanyi.sogou.com")
+        .header(USER_AGENT, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36")
+        .header(CONTENT_TYPE, "application/json;charset=UTF-8")
+        .send()
+        .await
+        .map_err(|e| format!("Failed to fetch cookie page: {}", e))?;
+
+    let mut snuid = String::new();
+    let mut fqv = String::new();
+
+    for value in resp.headers().get_all("set-cookie").iter() {
+        if let Ok(cookie_str) = value.to_str() {
+            let pair = cookie_str.split(';').next().unwrap_or("").trim();
+            if pair.starts_with("SNUID=") {
+                snuid = pair.trim_start_matches("SNUID=").to_string();
+            } else if pair.starts_with("FQV=") {
+                fqv = pair.trim_start_matches("FQV=").to_string();
+            }
+        }
+    }
+
+    if snuid.is_empty() || fqv.is_empty() {
+        return Err("Failed to extract SNUID or FQV from set-cookie headers".to_string());
+    }
+
+    Ok((snuid, fqv))
+}
+
+async fn get_or_refresh_cookie(
+    client: &reqwest::Client,
+    app: &AppHandle,
+) -> Result<(String, String), String> {
+    let store = app
+        .store("cookie_store.json")
+        .map_err(|e| format!("Failed to open store: {}", e))?;
+
+    let now = now_ms();
+    // for key in store.keys() {
+    //     println!("{}: {:?}", key, store.get(&key));
+    // }
+
+    // 读取缓存的时间戳
+    let cached_ts: Option<u64> = store.get("cookie_ts").and_then(|v| v.as_u64());
+
+    let needs_refresh = cached_ts
+        .map(|ts| is_one_day_apart(ts, now))
+        .unwrap_or(true); // 没有缓存时也刷新
+
+    if !needs_refresh {
+        let cookie = store
+            .get("cookie")
+            .and_then(|v| v.as_str().map(str::to_string));
+        let uuid = store
+            .get("uuid")
+            .and_then(|v| v.as_str().map(str::to_string));
+
+        if let (Some(cookie), Some(uuid)) = (cookie, uuid) {
+            return Ok((cookie, uuid));
+        }
+    }
+
+    // 重新获取 cookie
+    let (snuid, fqv) = fetch_sogou_cookie(client).await?;
+    let cookie_str = format!("SNUID={}; FQV={}", snuid, fqv);
+    // 重新生成 uuid
+    let uuid = Uuid::new_v4().to_string();
+
+    store.set("cookie", Value::String(cookie_str.clone()));
+    store.set("cookie_ts", Value::Number(now.into()));
+    store.set("uuid", Value::String(uuid.clone()));
+    store
+        .save()
+        .map_err(|e| format!("Failed to save cookie store: {}", e))?;
+
+    Ok((cookie_str, uuid))
+}
+
+fn build_headers(cookie: &str) -> HeaderMap {
     let mut headers = HeaderMap::new();
 
-    headers.insert(USER_AGENT, HeaderValue::from_static("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36"));
+    headers.insert(
+        USER_AGENT,
+        HeaderValue::from_static(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36",
+        ),
+    );
     headers.insert(
         REFERER,
         HeaderValue::from_static("https://fanyi.sogou.com/"),
@@ -94,17 +193,21 @@ fn build_headers() -> HeaderMap {
     );
     headers.insert(
         COOKIE,
-        HeaderValue::from_static(
-            "SNUID=9C17E74D454017C3851D74754643D7C3; FQV=2268e6de1ff4ef9d1753f1d9f6c78b38",
-        ),
+        HeaderValue::from_str(cookie).unwrap_or_else(|_| HeaderValue::from_static("")),
     );
 
     headers
 }
 
-pub async fn fetch_translation(word: &str, state: &AppState) -> Result<DictResponse, String> {
+pub async fn fetch_translation(
+    word: &str,
+    state: &AppState,
+    app: &AppHandle,
+) -> Result<DictResponse, String> {
     let url = "https://fanyi.sogou.com/api/transpc/text/result";
     let token = generate_s_token(word);
+
+    let (cookie, uuid) = get_or_refresh_cookie(&state.client, app).await?;
 
     let params = TranslationParams {
         from: "auto".to_string(),
@@ -114,14 +217,14 @@ pub async fn fetch_translation(word: &str, state: &AppState) -> Result<DictRespo
         fr: "browser_pc".to_string(),
         need_qc: 1,
         s: token,
-        uuid: state.device_id.clone(),
+        uuid: uuid,
         exchange: false,
     };
 
     let raw_res: SogouRawResponse = state
         .client
         .post(url)
-        .headers(build_headers())
+        .headers(build_headers(&cookie))
         .json(&params)
         .send()
         .await
@@ -140,8 +243,12 @@ pub async fn fetch_translation(word: &str, state: &AppState) -> Result<DictRespo
 }
 
 #[tauri::command]
-pub async fn fetch_trans_res(state: State<'_, AppState>, word: String) -> Result<TransResult, ()> {
-    match fetch_translation(&word, &state).await {
+pub async fn fetch_trans_res(
+    state: State<'_, AppState>,
+    app: AppHandle,
+    word: String,
+) -> Result<TransResult, ()> {
+    match fetch_translation(&word, &state, &app).await {
         Ok(data) => Ok(TransResult::success(data)),
         Err(err_msg) => Ok(TransResult::fail(err_msg)),
     }

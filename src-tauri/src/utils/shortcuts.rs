@@ -79,7 +79,7 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
                     if is_pressed {
                         get_data_under_cursor(app_handle.state(), window);
                     } else {
-                        let _ = window.hide();
+                        // let _ = window.hide();
                     }
                 }
             }

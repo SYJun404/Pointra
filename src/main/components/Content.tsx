@@ -5,12 +5,14 @@ import { Skeleton } from "@heroui/react";
 function Content({ transResult }: { transResult: TransResultTypes | null }) {
     if (transResult === null) {
         return (
-            <div className="shadow-panel w-62.5 space-y-5 rounded-lg bg-transparent p-4">
-                <Skeleton className="h-32 rounded-lg" />
-                <div className="space-y-3">
-                    <Skeleton className="h-3 w-3/5 rounded-lg" />
-                    <Skeleton className="h-3 w-4/5 rounded-lg" />
-                    <Skeleton className="h-3 w-2/5 rounded-lg" />
+            <div className="mx-3 flex flex-col p-3 pt-2.5 flex-1 min-h-0 border-borderMainW border rounded-xl">
+                <div className="shadow-panel w-62.5 space-y-5 rounded-lg bg-transparent p-4">
+                    <Skeleton className="h-32 rounded-lg" />
+                    <div className="space-y-3">
+                        <Skeleton className="h-3 w-3/5 rounded-lg" />
+                        <Skeleton className="h-3 w-4/5 rounded-lg" />
+                        <Skeleton className="h-3 w-2/5 rounded-lg" />
+                    </div>
                 </div>
             </div>
         );

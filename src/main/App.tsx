@@ -7,17 +7,20 @@ import Header from "./components/Header";
 import Content from "./components/Content";
 import Footer from "./components/Footer";
 import { TransResultTypes } from "./types/transResult";
+import ApiError from "./components/ApiError";
 
 function App() {
     const [transResult, setTransResult] = useState<TransResultTypes | null>(
         null,
     );
+    const [error, setError] = useState<string | null>(null);
 
     // 按下Esc隐藏当前窗口
     useWindowShortcut();
     // 窗口显示时执行的回调
     useOnWindowChange(() => {
         setTransResult(null);
+        setError(null);
     });
 
     useEffect(() => {
@@ -31,8 +34,11 @@ function App() {
                             word: event.payload,
                         },
                     );
+                    console.log(res);
                     if (res.status === 200) {
                         setTransResult(res);
+                    } else {
+                        setError(res.msg);
                     }
                 },
             );
@@ -51,7 +57,13 @@ function App() {
     return (
         <div className="pt-3 flex flex-col gap-3 h-screen overflow-hidden">
             <Header />
-            <Content transResult={transResult} />
+
+            {error === null ? (
+                <Content transResult={transResult} />
+            ) : (
+                <ApiError message={error} />
+            )}
+
             <Footer />
         </div>
     );
