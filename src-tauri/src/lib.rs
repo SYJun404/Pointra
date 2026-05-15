@@ -1,5 +1,6 @@
 mod commands;
 mod utils;
+use commands::audio::{play_phonetic_url, AudioState};
 use commands::window::{apply_window_effects, update_hover_status, update_window_status};
 use reqwest::Client;
 use std::sync::atomic::AtomicBool;
@@ -15,6 +16,7 @@ pub struct AppState {
     client: Client,
     window_locked: Arc<AtomicBool>,
     window_pined: Arc<AtomicBool>,
+    audio_state: AudioState,
 }
 
 pub fn run() {
@@ -25,13 +27,15 @@ pub fn run() {
             client: Client::new(),
             window_locked: Arc::new(AtomicBool::new(false)),
             window_pined: Arc::new(AtomicBool::new(false)),
+            audio_state: AudioState::new(0.5),
         })
         // 注册命令
         .invoke_handler(tauri::generate_handler![
             apply_window_effects,
             update_window_status,
             update_hover_status,
-            fetch_trans_res
+            fetch_trans_res,
+            play_phonetic_url
         ])
         .setup(|app| {
             #[cfg(target_os = "macos")]

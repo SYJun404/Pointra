@@ -1,56 +1,25 @@
 import { Volume, Ellipsis, Pin } from "@gravity-ui/icons";
-import { TransResultTypes, UsualDict, Phonetic } from "../types/transResult";
+import { TransResultTypes, UsualDict, Voice } from "../types/transResult";
 import Loading from "./Loading";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
-const AudioPlayer = ({ phonetic }: { phonetic: Phonetic[] }) => {
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
+const AudioPlayer = ({ voice }: { voice: Voice | string }) => {
+    if (typeof voice === "string" || voice?.phonetic === undefined)
+        return (
+            <div className="flex gap-1.5 font-sans font-semibold  items-center text-xs text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW">
+                <p className="pb-px">null</p>
+            </div>
+        );
 
-    const url = phonetic.find((item) => item.type === "usa")?.filename;
-    const phoneticText = phonetic.find((item) => item.type === "usa")?.text;
-
-    useEffect(() => {
-        if (url === "") {
-            setIsPlaying(false);
-            return;
-        }
-
-        const audio = new Audio(url);
-
-        audio.preload = "auto"; // 提示浏览器尽快下载音频
-        audio.volume = 0.3; // 设置默认音量
-
-        audioRef.current = audio;
-
-        const handleEnded = () => setIsPlaying(false);
-        audio.addEventListener("ended", handleEnded);
-
-        return () => {
-            audio.pause();
-            audio.removeEventListener("ended", handleEnded);
-            audioRef.current = null;
-        };
-    }, [url]);
+    const url = voice.phonetic.find((item) => item.type === "usa")?.filename;
+    const phoneticText = voice.phonetic.find(
+        (item) => item.type === "usa",
+    )?.text;
 
     const togglePlay = async () => {
         if (url === "") return;
-
-        const audio = audioRef.current;
-        if (!audio) return;
-
-        try {
-            if (isPlaying) {
-                audio.pause();
-                setIsPlaying(false);
-            } else {
-                await audio.play();
-                setIsPlaying(true);
-            }
-        } catch (error) {
-            console.error("播放失败:", error);
-        }
+        await invoke("play_phonetic_url", { url });
     };
 
     return (
@@ -59,11 +28,6 @@ const AudioPlayer = ({ phonetic }: { phonetic: Phonetic[] }) => {
             className="flex gap-1.5 font-sans font-semibold  items-center text-xs cursor-pointer transition-transform active:scale-90
         text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW"
         >
-            <audio
-                ref={audioRef}
-                src={url}
-                onEnded={() => setIsPlaying(false)} // 播放完自动恢复按钮状态
-            />
             {url !== "" && <Volume color="#aaaaaa" width={14} height={14} />}
             <p className="pb-px">{phoneticText}</p>
         </div>
@@ -152,17 +116,15 @@ function Content({ transResult }: { transResult: TransResultTypes | null }) {
                     </div>
                 </div>
 
-                {typeof voice === "string" ? null : (
-                    <div className="flex justify-between items-center">
-                        <AudioPlayer phonetic={voice.phonetic} />
-                        <p
-                            className="flex items-center justify-center w-6 h-6 rounded-md bg-tagBgW border border-borderMainW
+                <div className="flex justify-between items-center">
+                    <AudioPlayer voice={voice} />
+                    <p
+                        className="flex items-center justify-center w-6 h-6 rounded-md bg-tagBgW border border-borderMainW
                                        cursor-pointer transition-transform active:scale-90"
-                        >
-                            <Ellipsis color="#aaaaaa" width={14} height={14} />
-                        </p>
-                    </div>
-                )}
+                    >
+                        <Ellipsis color="#aaaaaa" width={14} height={14} />
+                    </p>
+                </div>
 
                 <div className="border-t border-borderSubW my-1"></div>
 
