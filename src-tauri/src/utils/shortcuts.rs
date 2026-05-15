@@ -71,15 +71,15 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
             let keys = device_state.get_keys();
             let is_pressed = keys.contains(&Keycode::RShift);
 
-            // 获取前端同步过来的鼠标状态
+            // 获取前端同步过来的窗口状态
             let is_hovered = appstate.window_locked.load(Ordering::Relaxed);
+            let is_pined = appstate.window_pined.load(Ordering::Relaxed);
 
-            if is_pressed != last_state {
+            if is_pressed != last_state && !is_pined {
                 last_state = is_pressed;
 
                 if let Some(window) = app_handle.get_webview_window("main") {
                     if is_pressed {
-                        appstate.window_locked.store(false, Ordering::Relaxed);
                         get_data_under_cursor(app_handle.state(), window);
                     } else {
                         // 松开按键：如果鼠标在窗口内，则不隐藏
@@ -89,10 +89,10 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
                     }
                 }
             }
+
             // 如果按键已经松开，且鼠标从窗口内移出到窗口外，此时应该隐藏窗口
-            if !is_pressed && !is_hovered {
+            if !is_pressed && !is_hovered && !is_pined {
                 if let Some(window) = app_handle.get_webview_window("main") {
-                    // 只有当窗口可见时才调用 hide，避免无效操作
                     if window.is_visible().unwrap_or(false) {
                         let _ = window.hide();
                     }

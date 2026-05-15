@@ -70,3 +70,8 @@ pub fn apply_window_effects(window: tauri::Window) {
 pub fn update_hover_status(hovered: bool, state: State<'_, AppState>) {
     state.window_locked.store(hovered, Ordering::Relaxed);
 }
+// 更新窗口是否固定
+#[tauri::command]
+pub fn update_window_status(pined: bool, state: State<'_, AppState>) {
+    state.window_pined.store(pined, Ordering::Relaxed);
+}

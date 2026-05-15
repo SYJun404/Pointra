@@ -1,5 +1,5 @@
 import "../assets/css/App.css";
-import { useWindowShortcut, useOnWindowChange } from "./utils/useCustom";
+import { useWindowListener, useOnWindowChange } from "./utils/useCustom";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
@@ -15,8 +15,8 @@ function App() {
     );
     const [error, setError] = useState<string | null>(null);
 
-    // 按下Esc隐藏当前窗口
-    useWindowShortcut();
+    // 监听鼠标移入/出 窗口
+    useWindowListener();
     // 窗口显示时执行的回调
     useOnWindowChange(() => {
         setTransResult(null);
@@ -34,7 +34,6 @@ function App() {
                             word: event.payload,
                         },
                     );
-                    console.log(res);
                     if (res.status === 200) {
                         setTransResult(res);
                     } else {

@@ -1,16 +1,9 @@
 import { useEffect, useRef } from "react";
-import { getCurrentWebviewWindow } from "@tauri-apps/api/webviewWindow";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 
-export function useWindowShortcut() {
+export function useWindowListener() {
     useEffect(() => {
-        const handleKeyDown = async (e: KeyboardEvent) => {
-            if (e.key === "Escape") {
-                await getCurrentWebviewWindow().hide();
-            }
-        };
-        window.addEventListener("keydown", handleKeyDown);
         // 监听鼠标进入窗口
         document.body.addEventListener("mouseenter", () => {
             invoke("update_hover_status", { hovered: true });
@@ -19,7 +12,6 @@ export function useWindowShortcut() {
         document.body.addEventListener("mouseleave", () => {
             invoke("update_hover_status", { hovered: false });
         });
-        return () => window.removeEventListener("keydown", handleKeyDown);
     }, []);
 }
 
