@@ -1,4 +1,4 @@
-import { Clock, Gear, Magnifier } from "@gravity-ui/icons";
+import { Gear, Magnifier } from "@gravity-ui/icons";
 import logo from "../../assets/icon/pointraInApp.png";
 
 function Footer() {

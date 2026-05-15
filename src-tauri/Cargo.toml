@@ -35,6 +35,8 @@ uuid = {version = "1.23.1",  features = ["v4", "serde"] }
 tokio = "1.52.3"
 tauri-plugin-store = "2.4.3"
 rodio = "0.19"
+enigo = "0.6.1"
+arboard = "3.6.1"
 
 
 
