@@ -1,20 +1,36 @@
 import { useEffect, useRef } from "react";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function useWindowListener() {
+export function useWindowListener(isPinned: boolean) {
+    const isPinnedRef = useRef(isPinned);
+
     useEffect(() => {
-        // 监听鼠标进入窗口
-        document.body.addEventListener("mouseenter", () => {
+        isPinnedRef.current = isPinned;
+    }, [isPinned]);
+
+    useEffect(() => {
+        const handleMouseEnter = () => {
             invoke("update_hover_status", { hovered: true });
-        });
-        // 监听鼠标离开窗口
-        document.body.addEventListener("mouseleave", () => {
+        };
+
+        const handleMouseLeave = () => {
             invoke("update_hover_status", { hovered: false });
-        });
+
+            if (!isPinnedRef.current) {
+                getCurrentWindow().hide();
+            }
+        };
+
+        document.body.addEventListener("mouseenter", handleMouseEnter);
+        document.body.addEventListener("mouseleave", handleMouseLeave);
+
+        return () => {
+            document.body.removeEventListener("mouseenter", handleMouseEnter);
+            document.body.removeEventListener("mouseleave", handleMouseLeave);
+        };
     }, []);
 }
-
 export function useOnWindowChange(onHide: () => void) {
     const savedOnHide = useRef(onHide);
 
@@ -27,7 +43,7 @@ export function useOnWindowChange(onHide: () => void) {
             const appWindow = getCurrentWindow();
 
             // 监听窗口隐藏/失焦事件
-            await appWindow.listen("tauri://blur", () => {
+            appWindow.listen("tauri://blur", () => {
                 // 判断窗口是否为隐藏状态
                 appWindow.isVisible().then((isShow) => {
                     if (!isShow) {

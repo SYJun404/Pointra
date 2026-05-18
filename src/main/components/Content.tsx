@@ -1,7 +1,6 @@
 import { Volume, Ellipsis, Pin } from "@gravity-ui/icons";
 import { TransResultTypes, UsualDict, Voice } from "../types/transResult";
 import Loading from "./Loading";
-import { useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 const AudioPlayer = ({ voice }: { voice: Voice | string }) => {
@@ -34,12 +33,18 @@ const AudioPlayer = ({ voice }: { voice: Voice | string }) => {
     );
 };
 
-function Content({ transResult }: { transResult: TransResultTypes | null }) {
+function Content({
+    transResult,
+    togglePin,
+    isPinned,
+}: {
+    transResult: TransResultTypes | null;
+    isPinned: boolean;
+    togglePin: () => void;
+}) {
     if (transResult === null) {
         return <Loading />;
     }
-
-    const [isPinned, setIsPinned] = useState(false);
 
     const { wordCard, voice, translate } = transResult.data;
 
@@ -48,11 +53,6 @@ function Content({ transResult }: { transResult: TransResultTypes | null }) {
         "v.": "bg-green-50 border border-green-200 text-green-600",
         "adj.": "bg-purple-50 border border-purple-200 text-purple-600",
         "adv.": "bg-amber-50 border border-amber-200 text-amber-600",
-    };
-
-    const togglePin = () => {
-        setIsPinned(!isPinned);
-        invoke("update_window_status", { pined: !isPinned });
     };
 
     const getPosStyle = (pos: string) =>

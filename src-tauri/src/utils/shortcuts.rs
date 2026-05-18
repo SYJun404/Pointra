@@ -1,9 +1,8 @@
 use crate::{commands::word::get_data_under_cursor, AppState};
-use device_query::{DeviceQuery, DeviceState, Keycode};
+use keytap::{EventKind, Key, Tap};
 use mouse_position::mouse_position::Mouse;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
-use tokio::time::{self, Duration};
 
 pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
     // 1. 获取鼠标当前全局坐标
@@ -60,42 +59,32 @@ pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
 
 pub fn init_ctrl_listener(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
-        let device_state = DeviceState::new();
-        let mut last_state = false;
-        let mut interval = time::interval(Duration::from_millis(33));
-        let appstate = app_handle.state::<AppState>();
+        let mut cached_window = None;
 
-        loop {
-            interval.tick().await;
+        let tap_init = Tap::new();
+        if let Ok(tap) = tap_init {
+            for event in tap.iter() {
+                match event.kind {
+                    EventKind::KeyDown(Key::ShiftRight) => {
+                        let window = cached_window
+                            .get_or_insert_with(|| app_handle.get_webview_window("main"));
 
-            let keys = device_state.get_keys();
-            let is_pressed = keys.contains(&Keycode::RShift);
-
-            // 获取前端同步过来的窗口状态
-            let is_hovered = appstate.window_locked.load(Ordering::Relaxed);
-            let is_pined = appstate.window_pined.load(Ordering::Relaxed);
-
-            if is_pressed != last_state && !is_pined {
-                last_state = is_pressed;
-
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    if is_pressed {
-                        get_data_under_cursor(app_handle.state(), window);
-                    } else {
-                        // 松开按键：如果鼠标在窗口内，则不隐藏
-                        if !is_hovered {
-                            let _ = window.hide();
+                        if let Some(win) = window {
+                            get_data_under_cursor(app_handle.state(), win.clone());
                         }
                     }
-                }
-            }
-
-            // 如果按键已经松开，且鼠标从窗口内移出到窗口外，此时应该隐藏窗口
-            if !is_pressed && !is_hovered && !is_pined {
-                if let Some(window) = app_handle.get_webview_window("main") {
-                    if window.is_visible().unwrap_or(false) {
-                        let _ = window.hide();
+                    EventKind::KeyUp(Key::ShiftRight) => {
+                        let app_state = app_handle.state::<AppState>();
+                        let is_hovered = app_state.window_locked.load(Ordering::Relaxed);
+                        if !is_hovered {
+                            let window = cached_window
+                                .get_or_insert_with(|| app_handle.get_webview_window("main"));
+                            if let Some(win) = window {
+                                let _ = win.hide();
+                            }
+                        }
                     }
+                    _ => {}
                 }
             }
         }

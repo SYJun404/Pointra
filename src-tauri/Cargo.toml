@@ -37,7 +37,7 @@ tauri-plugin-store = "2.4.3"
 rodio = "0.19"
 enigo = "0.6.1"
 arboard = "3.6.1"
-
+keytap = "0.4.0"
 
 
 [target.'cfg(target_os = "macos")'.dependencies]

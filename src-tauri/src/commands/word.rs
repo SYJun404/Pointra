@@ -57,19 +57,11 @@ fn get_selected_text_via_clipboard(window: WebviewWindow) -> Option<String> {
 }
 
 pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWindow) {
-    // 方案一 获取鼠标选中的文本
-    let selected_text = get_selected_text_via_clipboard(window.clone());
-    println!("{:? }", selected_text);
-    if let Some(text) = selected_text {
-        if !text.is_empty() {
-            // 显示窗口
-            show_window(&window);
-            window.emit("from-cursor", text).ok();
-            return;
-        }
+    if window.is_visible().unwrap() {
+        return;
     }
 
-    // 方案二 1. 处理截图逻辑，捕获错误并通过事件通知前端
+    // 1. 处理截图逻辑，捕获错误并通过事件通知前端
     let capture_res = capture_around_cursor(&app_state.screen_cache, 200, 40);
 
     let Ok((img, rel_x, rel_y)) = capture_res else {

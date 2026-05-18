@@ -14,9 +14,10 @@ function App() {
         null,
     );
     const [error, setError] = useState<string | null>(null);
+    const [isPinned, setIsPinned] = useState(false);
 
-    // 监听鼠标移入/出 窗口
-    useWindowListener();
+    // 监听鼠标移入/出窗口
+    useWindowListener(isPinned);
     // 窗口显示时执行的回调
     useOnWindowChange(() => {
         setTransResult(null);
@@ -58,7 +59,11 @@ function App() {
             <Header />
 
             {error === null ? (
-                <Content transResult={transResult} />
+                <Content
+                    transResult={transResult}
+                    togglePin={() => setIsPinned(!isPinned)}
+                    isPinned={isPinned}
+                />
             ) : (
                 <ApiError message={error} />
             )}
