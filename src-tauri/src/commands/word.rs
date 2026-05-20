@@ -57,11 +57,13 @@ fn get_selected_text_via_clipboard(window: &WebviewWindow) -> Option<String> {
 }
 
 pub fn get_data_from_selected_text(window: WebviewWindow) {
-    let text = get_selected_text_via_clipboard(&window);
-    if let Some(text) = text {
-        show_window(&window);
-        window.emit("from-cursor", text).ok();
-    }
+    tauri::async_runtime::spawn(async move {
+        let text = get_selected_text_via_clipboard(&window);
+        if let Some(text) = text {
+            show_window(&window);
+            window.emit("from-cursor", text).ok();
+        }
+    });
 }
 
 pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWindow) {

@@ -1,15 +1,15 @@
-import { Gear, Magnifier } from "@gravity-ui/icons";
+import { Pin, Magnifier } from "@gravity-ui/icons";
 import logo from "../../assets/icon/pointraInApp.png";
+import useUiStore from "../../main/store/useUiStore";
 
 function Footer() {
+    const isPinned = useUiStore((state) => state.isPinned);
+    const setIsPinned = useUiStore((state) => state.setIsPinned);
+
     const ACTION_BUTTONS = [
         {
             id: "search",
             icon: <Magnifier color="#bbbbbb" height={14} width={14} />,
-        },
-        {
-            id: "settings",
-            icon: <Gear color="#bbbbbb" height={14} width={14} />,
         },
     ];
 
@@ -47,6 +47,29 @@ function Footer() {
                             {icon}
                         </IconButton>
                     ))}
+                    <div
+                        onClick={() => setIsPinned(!isPinned)}
+                        className={`
+                            flex items-center justify-center w-6 h-6 rounded-md border cursor-pointer
+                            transition-all duration-200 active:scale-90
+                            ${
+                                isPinned
+                                    ? "bg-red-50 border-red-200" // 选中状态
+                                    : "bg-white  border-borderMainW" // 默认状态
+                            }
+                          `}
+                    >
+                        <div
+                            className={`transition-transform duration-300 ${!isPinned ? "rotate-0" : "-rotate-45"}`}
+                        >
+                            <Pin
+                                // 根据状态切换颜色
+                                color={isPinned ? "#ef4444" : "#bbbbbb"}
+                                width={14}
+                                height={14}
+                            />
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -8,13 +8,17 @@ import Content from "./components/Content";
 import Footer from "./components/Footer";
 import { TransResultTypes } from "./types/transResult";
 import ApiError from "./components/ApiError";
+import { judgeSentence } from "./utils/tool";
+import Sentence from "./components/Sentence";
+import useUiStore from "./store/useUiStore";
 
 function App() {
     const [transResult, setTransResult] = useState<TransResultTypes | null>(
         null,
     );
     const [error, setError] = useState<string | null>(null);
-    const [isPinned, setIsPinned] = useState(false);
+    const [isSentence, setisSentence] = useState(false);
+    const isPinned = useUiStore((state) => state.isPinned);
 
     // 监听鼠标移入/出窗口
     useWindowListener(isPinned);
@@ -36,7 +40,9 @@ function App() {
                         },
                     );
                     if (res.status === 200) {
+                        console.log(res);
                         setTransResult(res);
+                        setisSentence(judgeSentence(res.data.translate.text));
                     } else {
                         setError(res.msg);
                     }
@@ -59,11 +65,11 @@ function App() {
             <Header />
 
             {error === null ? (
-                <Content
-                    transResult={transResult}
-                    togglePin={() => setIsPinned(!isPinned)}
-                    isPinned={isPinned}
-                />
+                isSentence ? (
+                    <Sentence transResult={transResult} />
+                ) : (
+                    <Content transResult={transResult} />
+                )
             ) : (
                 <ApiError message={error} />
             )}

@@ -1,9 +1,17 @@
-import { Volume, Ellipsis, Pin } from "@gravity-ui/icons";
+import { Volume, VolumeXmark, Copy } from "@gravity-ui/icons";
 import { TransResultTypes, UsualDict, Voice } from "../types/transResult";
 import Loading from "./Loading";
 import { invoke } from "@tauri-apps/api/core";
 
-const AudioPlayer = ({ voice }: { voice: Voice | string }) => {
+const AudioPlayer = ({
+    voice,
+    isShow,
+}: {
+    voice: Voice | string;
+    isShow: boolean;
+}) => {
+    if (!isShow) return null;
+
     if (typeof voice === "string" || voice?.phonetic === undefined)
         return (
             <div className="flex gap-1.5 font-sans font-semibold  items-center text-xs text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW">
@@ -22,26 +30,29 @@ const AudioPlayer = ({ voice }: { voice: Voice | string }) => {
     };
 
     return (
-        <div
-            onClick={togglePlay}
-            className="flex gap-1.5 font-sans font-semibold  items-center text-xs cursor-pointer transition-transform active:scale-90
-        text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW"
-        >
-            {url !== "" && <Volume color="#aaaaaa" width={14} height={14} />}
-            <p className="pb-px">{phoneticText}</p>
+        <div className="flex justify-between items-center">
+            <div
+                className="flex gap-1.5 font-sans font-semibold  items-center text-xs transition-transform
+            text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW"
+            >
+                <p className="pb-px">{phoneticText}</p>
+            </div>
+            <div
+                onClick={togglePlay}
+                className="flex items-center justify-center w-6 h-6 rounded-md bg-tagBgW border border-borderMainW
+                               cursor-pointer transition-transform active:scale-90"
+            >
+                {url !== "" ? (
+                    <Volume color="#aaaaaa" width={14} height={14} />
+                ) : (
+                    <VolumeXmark color="#aaaaaa" width={14} height={14} />
+                )}
+            </div>
         </div>
     );
 };
 
-function Content({
-    transResult,
-    togglePin,
-    isPinned,
-}: {
-    transResult: TransResultTypes | null;
-    isPinned: boolean;
-    togglePin: () => void;
-}) {
+function Content({ transResult }: { transResult: TransResultTypes | null }) {
     if (transResult === null) {
         return <Loading />;
     }
@@ -92,23 +103,16 @@ function Content({
                 <div className="flex justify-between items-center">
                     <p className="text-xl text-mainTitleW">{translate.text}</p>
                     <div
-                        onClick={togglePin}
                         className={`
                             flex items-center justify-center w-6 h-6 rounded-md border cursor-pointer
-                            transition-all duration-200 active:scale-90
-                            ${
-                                isPinned
-                                    ? "bg-red-50 border-red-200" // 选中状态
-                                    : "bg-blue-50 border-blue-200" // 默认状态
-                            }
+                            transition-all duration-200 active:scale-90 bg-blue-50 border-blue-200
+
                           `}
                     >
-                        <div
-                            className={`transition-transform duration-300 ${isPinned ? "rotate-0" : "rotate-45"}`}
-                        >
-                            <Pin
+                        <div className={"transition-transform duration-300"}>
+                            <Copy
                                 // 根据状态切换颜色
-                                color={isPinned ? "#ef4444" : "#4a90d9"}
+                                color={"#4a90d9"}
                                 width={14}
                                 height={14}
                             />
@@ -116,21 +120,15 @@ function Content({
                     </div>
                 </div>
 
-                <div className="flex justify-between items-center">
-                    <AudioPlayer voice={voice} />
-                    <p
-                        className="flex items-center justify-center w-6 h-6 rounded-md bg-tagBgW border border-borderMainW
-                                       cursor-pointer transition-transform active:scale-90"
-                    >
-                        <Ellipsis color="#aaaaaa" width={14} height={14} />
-                    </p>
-                </div>
+                <AudioPlayer voice={voice} isShow={wordCard.show} />
 
                 <div className="border-t border-borderSubW my-1"></div>
 
                 {/*常用释义*/}
                 <div className="flex flex-col mt-0.5">
-                    <p className="text-[10px] text-tagW font-sans">常用释义</p>
+                    <p className="text-[10px] text-tagW font-sans">
+                        {wordCard.show ? "常用" : "中文"}释义
+                    </p>
                     <p className="text-xl text-mainBlueW">{translate.dit}</p>
                 </div>
             </main>

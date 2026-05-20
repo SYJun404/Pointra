@@ -21,9 +21,11 @@ export function useWindowListener(isPinned: boolean) {
                 getCurrentWindow().hide();
             }
         };
-        const handleEsc = () => {
-            if (!isPinnedRef.current) {
-                getCurrentWindow().hide();
+        const handleEsc = (e: KeyboardEvent) => {
+            if (e.key === "Tab") {
+                if (!isPinnedRef.current) {
+                    getCurrentWindow().hide();
+                }
             }
         };
 

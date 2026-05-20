@@ -69,7 +69,7 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
         if let Ok(tap) = tap_init {
             for event in tap.iter() {
                 match event.kind {
-                    EventKind::KeyDown(Key::ShiftRight) => {
+                    EventKind::KeyDown(Key::F3) => {
                         let window = cached_window
                             .get_or_insert_with(|| app_handle.get_webview_window("main"));
 
@@ -77,7 +77,7 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
                             get_data_under_cursor(app_handle.state(), win.clone());
                         }
                     }
-                    EventKind::KeyUp(Key::ShiftRight) => {
+                    EventKind::KeyUp(Key::F3) => {
                         let app_state = app_handle.state::<AppState>();
                         let is_hovered = app_state.window_locked.load(Ordering::Relaxed);
                         if !is_hovered {
@@ -104,7 +104,6 @@ pub fn init_shortcuts<R: Runtime>(app: &AppHandle<R>) {
 }
 
 pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut) {
-    // 判断是哪个快捷键被触发了
     if shortcut.matches(Modifiers::SUPER, Code::Digit1) {
         let win = app.get_webview_window("main");
         if let Some(win) = win {
