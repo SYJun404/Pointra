@@ -5,9 +5,10 @@ use commands::window::{apply_window_effects, update_hover_status};
 use reqwest::Client;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use tauri_plugin_global_shortcut::ShortcutState;
 use utils::capture::ScreenCache;
 use utils::ocr_mac::OcrState;
-use utils::shortcuts::init_ctrl_listener;
+use utils::shortcuts::{handle_shortcut_event, init_ctrl_listener, init_shortcuts};
 use utils::translate::fetch_trans_res;
 
 pub struct AppState {
@@ -41,11 +42,21 @@ pub fn run() {
             }
             let handle = app.handle().clone();
             init_ctrl_listener(handle);
+            init_shortcuts(app.handle());
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_nspanel::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(
+            tauri_plugin_global_shortcut::Builder::new()
+                .with_handler(|app, shortcut, event| {
+                    if event.state() == ShortcutState::Pressed {
+                        handle_shortcut_event(app, shortcut);
+                    }
+                })
+                .build(),
+        )
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

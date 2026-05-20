@@ -13,8 +13,8 @@ use std::{
 };
 use tauri::{Emitter, State, WebviewWindow};
 
-/// 方案一：通过剪贴板获取选中文本
-fn get_selected_text_via_clipboard(window: WebviewWindow) -> Option<String> {
+// 通过剪贴板获取选中文本
+fn get_selected_text_via_clipboard(window: &WebviewWindow) -> Option<String> {
     let mut enigo = Enigo::new(&Settings::default()).ok()?;
     let mut clipboard = Clipboard::new().ok()?;
 
@@ -27,7 +27,7 @@ fn get_selected_text_via_clipboard(window: WebviewWindow) -> Option<String> {
     // 模拟 Command + C
     #[cfg(target_os = "macos")]
     {
-        let result = window.run_on_main_thread(move || {
+        let _ = window.run_on_main_thread(move || {
             let _ = enigo.key(Key::Meta, Press);
             let _ = enigo.key(Key::Unicode('c'), Press);
             let _ = enigo.key(Key::Unicode('c'), Release);
@@ -54,6 +54,14 @@ fn get_selected_text_via_clipboard(window: WebviewWindow) -> Option<String> {
     }
 
     result
+}
+
+pub fn get_data_from_selected_text(window: WebviewWindow) {
+    let text = get_selected_text_via_clipboard(&window);
+    if let Some(text) = text {
+        show_window(&window);
+        window.emit("from-cursor", text).ok();
+    }
 }
 
 pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWindow) {

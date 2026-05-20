@@ -21,13 +21,20 @@ export function useWindowListener(isPinned: boolean) {
                 getCurrentWindow().hide();
             }
         };
+        const handleEsc = () => {
+            if (!isPinnedRef.current) {
+                getCurrentWindow().hide();
+            }
+        };
 
         document.body.addEventListener("mouseenter", handleMouseEnter);
         document.body.addEventListener("mouseleave", handleMouseLeave);
+        document.addEventListener("keydown", handleEsc);
 
         return () => {
             document.body.removeEventListener("mouseenter", handleMouseEnter);
             document.body.removeEventListener("mouseleave", handleMouseLeave);
+            document.removeEventListener("keydown", handleEsc);
         };
     }, []);
 }

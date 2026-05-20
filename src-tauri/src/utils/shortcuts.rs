@@ -1,8 +1,12 @@
-use crate::{commands::word::get_data_under_cursor, AppState};
+use crate::{
+    commands::word::{get_data_from_selected_text, get_data_under_cursor},
+    AppState,
+};
 use keytap::{EventKind, Key, Tap};
 use mouse_position::mouse_position::Mouse;
 use std::sync::atomic::Ordering;
 use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
+use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
 
 pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
     // 1. 获取鼠标当前全局坐标
@@ -89,4 +93,22 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
             }
         }
     });
+}
+
+pub fn init_shortcuts<R: Runtime>(app: &AppHandle<R>) {
+    let shortcut_manager = app.global_shortcut();
+
+    let my_shortcut = Shortcut::new(Some(Modifiers::SUPER), Code::Digit1);
+
+    let _ = shortcut_manager.register(my_shortcut);
+}
+
+pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut) {
+    // 判断是哪个快捷键被触发了
+    if shortcut.matches(Modifiers::SUPER, Code::Digit1) {
+        let win = app.get_webview_window("main");
+        if let Some(win) = win {
+            get_data_from_selected_text(win);
+        }
+    }
 }
