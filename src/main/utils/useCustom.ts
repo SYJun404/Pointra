@@ -52,7 +52,7 @@ export function useOnWindowChange(onHide: () => void) {
             const appWindow = getCurrentWindow();
 
             // 监听窗口隐藏/失焦事件
-            appWindow.listen("tauri://blur", () => {
+            const unlisten = await appWindow.listen("tauri://blur", () => {
                 // 判断窗口是否为隐藏状态
                 appWindow.isVisible().then((isShow) => {
                     if (!isShow) {
@@ -60,8 +60,12 @@ export function useOnWindowChange(onHide: () => void) {
                     }
                 });
             });
+            return unlisten;
         }
 
-        setupListener();
+        const listenerPromise = setupListener();
+        return () => {
+            listenerPromise.then((unlisten) => unlisten());
+        };
     }, []);
 }

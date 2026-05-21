@@ -1,65 +1,11 @@
 use crate::{
-    commands::word::{get_data_from_selected_text, get_data_under_cursor},
+    commands::word::{get_data_from_selected_text, get_data_under_cursor, show_input_window},
     AppState,
 };
 use keytap::{EventKind, Key, Tap};
-use mouse_position::mouse_position::Mouse;
 use std::sync::atomic::Ordering;
-use tauri::{AppHandle, Manager, PhysicalPosition, PhysicalSize, Runtime, WebviewWindow};
+use tauri::{AppHandle, Manager, Runtime};
 use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut};
-
-pub fn show_window<R: Runtime>(window: &WebviewWindow<R>) {
-    // 1. 获取鼠标当前全局坐标
-    if let Mouse::Position { x, y } = Mouse::get_mouse_position() {
-        // 2. 获取当前显示器信息
-        if let Ok(Some(monitor)) = window.current_monitor() {
-            let monitor_pos = monitor.position(); // 显示器起始位置（多屏时很重要）
-
-            let monitor_size = monitor.size(); // 显示器物理像素大小
-
-            // 3. 获取窗口当前的物理大小
-            // let window_size = window.outer_size().unwrap_or_default();
-            let window_size: PhysicalSize<u32> = PhysicalSize {
-                width: 320,
-                height: 420,
-            };
-
-            let offset = 10; // 离鼠标的偏移距离
-            let mut final_x = x + offset;
-            let mut final_y = y + offset;
-
-            // --- 碰撞检测逻辑 ---
-
-            // 检测右边缘：鼠标位置 + 偏移 + 窗口宽度 > 显示器右边界
-            let monitor_right_edge = monitor_pos.x + monitor_size.width as i32;
-            if final_x + (window_size.width as i32) > monitor_right_edge {
-                // 让窗口贴住右边框，并留出 offset 间隙
-                final_x = monitor_right_edge - (window_size.width as i32) - offset;
-                // 轴向微调：让窗口稍微向下错位，避免遮挡光标中心
-                final_y += offset;
-            }
-
-            let monitor_bottom_edge = monitor_pos.y + monitor_size.height as i32;
-            if final_y + (window_size.height as i32) > monitor_bottom_edge {
-                final_y = monitor_bottom_edge - (window_size.height as i32) - offset;
-            }
-
-            // --- 兜底逻辑：防止窗口超出左边缘或顶边缘 ---
-            // final_x = final_x.max(monitor_pos.x);
-            // final_y = final_y.max(monitor_pos.y);
-
-            // 4. 执行移动和显示
-            let _ = window.set_position(PhysicalPosition {
-                x: final_x,
-                y: final_y,
-            });
-
-            std::thread::sleep(std::time::Duration::from_millis(10));
-            let _ = window.show();
-            let _ = window.set_focus();
-        }
-    }
-}
 
 pub fn init_ctrl_listener(app_handle: AppHandle) {
     tauri::async_runtime::spawn(async move {
@@ -98,16 +44,19 @@ pub fn init_ctrl_listener(app_handle: AppHandle) {
 pub fn init_shortcuts<R: Runtime>(app: &AppHandle<R>) {
     let shortcut_manager = app.global_shortcut();
 
-    let my_shortcut = Shortcut::new(Some(Modifiers::SUPER), Code::Digit1);
+    let shortcut_select_text = Shortcut::new(Some(Modifiers::SUPER), Code::Digit1);
+    let shortcut_show_input = Shortcut::new(Some(Modifiers::SUPER), Code::Digit2);
 
-    let _ = shortcut_manager.register(my_shortcut);
+    let _ = shortcut_manager.register(shortcut_select_text);
+    let _ = shortcut_manager.register(shortcut_show_input);
 }
 
 pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut) {
-    if shortcut.matches(Modifiers::SUPER, Code::Digit1) {
-        let win = app.get_webview_window("main");
-        if let Some(win) = win {
+    if let Some(win) = app.get_webview_window("main") {
+        if shortcut.matches(Modifiers::SUPER, Code::Digit1) {
             get_data_from_selected_text(win);
+        } else if shortcut.matches(Modifiers::SUPER, Code::Digit2) {
+            show_input_window(win);
         }
     }
 }

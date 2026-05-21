@@ -3,6 +3,7 @@ import { useWindowListener, useOnWindowChange } from "./utils/useCustom";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
+import { Routes, useNavigate, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Content from "./components/Content";
 import Footer from "./components/Footer";
@@ -11,8 +12,9 @@ import ApiError from "./components/ApiError";
 import { judgeSentence } from "./utils/tool";
 import Sentence from "./components/Sentence";
 import useUiStore from "./store/useUiStore";
+import SearchPage from "./pages/SearchPage";
 
-function App() {
+function HomePage() {
     const [transResult, setTransResult] = useState<TransResultTypes | null>(
         null,
     );
@@ -74,8 +76,40 @@ function App() {
                 <ApiError message={error} />
             )}
 
-            <Footer />
+            <Footer path={"home"} />
         </div>
+    );
+}
+
+function App() {
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const setupListener = async () => {
+            const unlisten = await listen<string>(
+                "win-router",
+                async (event) => {
+                    if (event.payload === "search") {
+                        navigate("/search");
+                    }
+                },
+            );
+
+            // 返回清理函数
+            return unlisten;
+        };
+
+        const listenerPromise = setupListener();
+
+        return () => {
+            listenerPromise.then((unlisten) => unlisten());
+        };
+    }, []);
+    return (
+        <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/search" element={<SearchPage />} />
+        </Routes>
     );
 }
 

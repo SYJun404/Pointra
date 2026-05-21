@@ -68,15 +68,22 @@ impl TransResult {
     }
 }
 
-fn generate_s_token(text: &str) -> String {
-    let from = "auto";
-    let to = "zh-CHS";
+fn generate_s_token(text: &str) -> (String, bool) {
+    // 根据text判断是否为英文
+    let is_english = text.as_bytes().is_ascii();
+
+    let from = if is_english { "en" } else { "zh-CHS" };
+    let to = if is_english { "zh-CHS" } else { "en" };
     let salt = "109984457";
 
     let input = format!("{}{}{}{}", from, to, text, salt);
 
     let digest = md5::compute(input);
-    format!("{:x}", digest)
+
+    if is_english {
+        return (format!("{:x}", digest), true);
+    }
+    (format!("{:x}", digest), false)
 }
 
 fn now_ms() -> u64 {
@@ -205,13 +212,13 @@ pub async fn fetch_translation(
     app: &AppHandle,
 ) -> Result<DictResponse, String> {
     let url = "https://fanyi.sogou.com/api/transpc/text/result";
-    let token = generate_s_token(word);
+    let (token, is_english) = generate_s_token(word);
 
     let (cookie, uuid) = get_or_refresh_cookie(&state.client, app).await?;
 
     let params = TranslationParams {
-        from: "auto".to_string(),
-        to: "zh-CHS".to_string(),
+        from: if is_english { "en" } else { "zh-CHS" }.to_string(),
+        to: if is_english { "zh-CHS" } else { "en" }.to_string(),
         text: word.to_string(),
         client: "pc".to_string(),
         fr: "browser_pc".to_string(),

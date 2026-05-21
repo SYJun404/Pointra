@@ -1,14 +1,22 @@
-import { Pin, Magnifier } from "@gravity-ui/icons";
+import { Pin, Magnifier, ArrowUturnCcwLeft } from "@gravity-ui/icons";
 import logo from "../../assets/icon/pointraInApp.png";
 import useUiStore from "../../main/store/useUiStore";
+import { useNavigate } from "react-router-dom";
 
-function Footer() {
+function Footer({ path }: { path: string }) {
+    const navigate = useNavigate();
     const isPinned = useUiStore((state) => state.isPinned);
     const setIsPinned = useUiStore((state) => state.setIsPinned);
 
     const ACTION_BUTTONS = [
         {
             id: "search",
+            router: "/",
+            icon: <ArrowUturnCcwLeft color="#bbbbbb" height={14} width={14} />,
+        },
+        {
+            id: "home",
+            router: "/search",
             icon: <Magnifier color="#bbbbbb" height={14} width={14} />,
         },
     ];
@@ -33,20 +41,25 @@ function Footer() {
         <div className="mt-auto bg-subBgW h-10 px-3 py-2 rounded-b-3xl border-t border-borderSubW">
             <div className="flex items-center h-full relative gap-2">
                 <img className="w-4 h-4" src={logo}></img>
-                <p className="text-[11px] text-tagW absolute left-5 top-1">
-                    今日已翻译
-                    <span className="text-mainBlueW"> 24 </span>次
-                </p>
+                <p className="text-sm text-tagW absolute left-6">Pointra</p>
 
                 <div className="ml-auto flex gap-1.5">
-                    {ACTION_BUTTONS.map(({ id, icon }) => (
-                        <IconButton
-                            key={id}
-                            onClick={() => console.log(`${id} clicked`)}
-                        >
-                            {icon}
-                        </IconButton>
-                    ))}
+                    {(() => {
+                        const activeBtn = ACTION_BUTTONS.find(
+                            ({ id }) => id === path,
+                        );
+                        if (!activeBtn) return null;
+
+                        const { id, icon, router } = activeBtn;
+                        return (
+                            <IconButton
+                                key={id}
+                                onClick={() => navigate(router)}
+                            >
+                                {icon}
+                            </IconButton>
+                        );
+                    })()}
                     <div
                         onClick={() => setIsPinned(!isPinned)}
                         className={`

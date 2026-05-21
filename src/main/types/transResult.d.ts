@@ -62,3 +62,33 @@ export interface TransResultTypes {
     data: TransData;
     msg: string;
 }
+
+export interface TransDataZH {
+    translate: Translate;
+    wordCard: WordCardZH;
+    voice: Voice | string;
+}
+
+export interface TransResultZHTypes {
+    status: number;
+    data: TransDataZH;
+    msg: string;
+}
+
+export interface WordCardZH {
+    title: string;
+    show: boolean;
+    usualDict: UsualDictZH[];
+    secondQuery: SecondQueryZH[] | string;
+    exchange: string;
+}
+
+export interface SecondQueryZH {
+    k: string;
+    v: string;
+}
+
+export interface UsualDictZH {
+    values: string[];
+    pos: string;
+}
