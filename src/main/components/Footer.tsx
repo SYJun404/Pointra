@@ -1,4 +1,4 @@
-import { Pin, Magnifier, ArrowUturnCcwLeft } from "@gravity-ui/icons";
+import { Pin, Magnifier, ClockArrowRotateLeft } from "@gravity-ui/icons";
 import logo from "../../assets/icon/pointraInApp.png";
 import useUiStore from "../../main/store/useUiStore";
 import { useNavigate } from "react-router-dom";
@@ -12,7 +12,9 @@ function Footer({ path }: { path: string }) {
         {
             id: "search",
             router: "/",
-            icon: <ArrowUturnCcwLeft color="#bbbbbb" height={14} width={14} />,
+            icon: (
+                <ClockArrowRotateLeft color="#bbbbbb" height={15} width={15} />
+            ),
         },
         {
             id: "home",
@@ -77,7 +79,7 @@ function Footer({ path }: { path: string }) {
                         >
                             <Pin
                                 // 根据状态切换颜色
-                                color={isPinned ? "#ef4444" : "#bbbbbb"}
+                                color={isPinned ? "#fa2c37" : "#bbbbbb"}
                                 width={14}
                                 height={14}
                             />

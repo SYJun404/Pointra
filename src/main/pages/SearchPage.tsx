@@ -8,6 +8,8 @@ import SearchContent from "../components/SearchContent";
 import { useWindowListener, useOnWindowChange } from "../utils/useCustom";
 import useUiStore from "../store/useUiStore";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@heroui/react";
+import CustomToast from "../components/CustomToast";
 
 function SearchPage() {
     const navigate = useNavigate();
@@ -37,8 +39,15 @@ function SearchPage() {
         }
     };
 
+    const showToast = () => {
+        toast.success("复制成功!", {
+            timeout: 1500,
+        });
+    };
+
     return (
         <div className="pt-3 flex flex-col gap-3 h-screen overflow-hidden">
+            <CustomToast />
             <Header />
             {/* 顶部栏 */}
             <div className="mx-3 flex items-center gap-3">
@@ -50,7 +59,7 @@ function SearchPage() {
                             value={input}
                             onChange={(e: any) => setinput(e.target.value)}
                             placeholder="Translate Anything..."
-                            className="w-full h-9 pl-9 pr-9 text-sm rounded-lg bg-white border border-borderMainW
+                            className="w-full h-9 pl-9 pr-8 text-sm rounded-lg bg-white border border-borderMainW
                                    outline-none focus:border-mainBlueW transition-colors text-mainTitleW"
                         />
                     </form>
@@ -77,7 +86,10 @@ function SearchPage() {
             <div className="mx-3 flex-1  border border-borderMainW rounded-xl overflow-y-auto no-scrollbar">
                 {results ? (
                     typeof results.data.wordCard.secondQuery === "string" ? (
-                        <p className="text-sm text-tagW text-center mt-20">
+                        <p
+                            onClick={showToast}
+                            className="text-sm cursor-pointer text-tagW text-center mt-20  transition-all duration-200 active:scale-90"
+                        >
                             {results.data.translate.dit}
                         </p>
                     ) : (

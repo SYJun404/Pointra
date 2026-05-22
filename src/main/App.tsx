@@ -13,6 +13,7 @@ import { judgeSentence } from "./utils/tool";
 import Sentence from "./components/Sentence";
 import useUiStore from "./store/useUiStore";
 import SearchPage from "./pages/SearchPage";
+import { Toast } from "@heroui/react";
 
 function HomePage() {
     const [transResult, setTransResult] = useState<TransResultTypes | null>(
@@ -64,6 +65,7 @@ function HomePage() {
 
     return (
         <div className="pt-3 flex flex-col gap-3 h-screen overflow-hidden">
+            <Toast.Provider />
             <Header />
 
             {error === null ? (

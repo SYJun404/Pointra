@@ -62,8 +62,13 @@ pub fn get_data_from_selected_text(window: WebviewWindow) {
     tauri::async_runtime::spawn(async move {
         let text = get_selected_text_via_clipboard(&window);
         if let Some(text) = text {
+            let mut enigo = Enigo::new(&Settings::default()).unwrap();
             show_window(&window);
             window.emit("from-cursor", text).ok();
+            let (mx, my) = get_mouse_pos().unwrap();
+            enigo.move_mouse(mx + 16, my + 16, Abs).unwrap();
+            std::thread::sleep(std::time::Duration::from_millis(50));
+            enigo.button(Button::Left, Click).unwrap();
         }
     });
 }
