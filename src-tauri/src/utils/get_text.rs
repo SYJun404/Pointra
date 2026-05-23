@@ -63,12 +63,20 @@ pub fn get_data_from_selected_text(window: WebviewWindow) {
         let text = get_selected_text_via_clipboard(&window);
         if let Some(text) = text {
             let mut enigo = Enigo::new(&Settings::default()).unwrap();
-            show_main_window(&window);
             window.emit("from-cursor", text).ok();
-            let (mx, my) = get_mouse_pos().unwrap();
-            enigo.move_mouse(mx + 16, my + 16, Abs).unwrap();
-            std::thread::sleep(std::time::Duration::from_millis(50));
-            enigo.button(Button::Left, Click).unwrap();
+            if let Some(win_pos) = show_main_window(&window) {
+                if let Ok(scale) = window.scale_factor() {
+                    let win_logical_x = (win_pos.x as f64 / scale) as i32;
+                    let win_logical_y = (win_pos.y as f64 / scale) as i32;
+
+                    let click_x = win_logical_x + 6;
+                    let click_y = win_logical_y + 5;
+
+                    enigo.move_mouse(click_x, click_y, Abs).unwrap();
+                    std::thread::sleep(std::time::Duration::from_millis(50));
+                    enigo.button(Button::Left, Click).unwrap();
+                }
+            }
         }
     });
 }
