@@ -1,6 +1,7 @@
 mod commands;
 mod utils;
 use commands::audio::{play_phonetic_url, AudioState};
+use commands::translate::fetch_trans_res;
 use commands::window::{apply_window_effects, update_hover_status};
 use reqwest::Client;
 use std::sync::atomic::AtomicBool;
@@ -9,7 +10,6 @@ use tauri_plugin_global_shortcut::ShortcutState;
 use utils::capture::ScreenCache;
 use utils::ocr_mac::OcrState;
 use utils::shortcuts::{handle_shortcut_event, init_ctrl_listener, init_shortcuts};
-use utils::translate::fetch_trans_res;
 
 pub struct AppState {
     screen_cache: ScreenCache,

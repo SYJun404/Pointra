@@ -4,7 +4,7 @@ use reqwest::header::{HeaderMap, HeaderValue, ACCEPT, CONTENT_TYPE, COOKIE, REFE
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::{AppHandle, State};
+use tauri::AppHandle;
 use tauri_plugin_store::StoreExt;
 use uuid::Uuid;
 
@@ -247,16 +247,4 @@ pub async fn fetch_translation(
         translate: data.translate,
         word_card: data.word_card,
     })
-}
-
-#[tauri::command]
-pub async fn fetch_trans_res(
-    state: State<'_, AppState>,
-    app: AppHandle,
-    word: String,
-) -> Result<TransResult, ()> {
-    match fetch_translation(&word, &state, &app).await {
-        Ok(data) => Ok(TransResult::success(data)),
-        Err(err_msg) => Ok(TransResult::fail(err_msg)),
-    }
 }

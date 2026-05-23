@@ -2,6 +2,7 @@ use image::DynamicImage;
 use mouse_position::mouse_position::Mouse;
 use screenshots::Screen;
 
+#[derive(Debug)]
 pub struct ScreenCache {
     // 缓存所有屏幕对象
     pub screens: Vec<Screen>,

@@ -1,6 +1,6 @@
-use crate::commands::window::show_window;
 use crate::utils::capture::{capture_around_cursor, get_mouse_pos};
 use crate::utils::ocr_mac::{recognize_words, select_word};
+use crate::utils::show_window::show_main_window;
 use crate::AppState;
 use arboard::Clipboard;
 use enigo::{
@@ -63,7 +63,7 @@ pub fn get_data_from_selected_text(window: WebviewWindow) {
         let text = get_selected_text_via_clipboard(&window);
         if let Some(text) = text {
             let mut enigo = Enigo::new(&Settings::default()).unwrap();
-            show_window(&window);
+            show_main_window(&window);
             window.emit("from-cursor", text).ok();
             let (mx, my) = get_mouse_pos().unwrap();
             enigo.move_mouse(mx + 16, my + 16, Abs).unwrap();
@@ -101,25 +101,11 @@ pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWind
         if let Some(word) = select_word(&words, nx, ny) {
             if !word.is_empty() {
                 // 显示窗口
-                show_window(&window);
+                show_main_window(&window);
                 window.emit("from-cursor", word).ok();
             }
         } else {
             return;
         }
     }
-}
-
-pub fn show_input_window(window: WebviewWindow) {
-    tauri::async_runtime::spawn(async move {
-        let mut enigo = Enigo::new(&Settings::default()).unwrap();
-        window.emit("win-router", "search").ok();
-        show_window(&window);
-        // 移动鼠标位置，并且触发一次点击
-        // 首先获取当前鼠标位置，然后再做偏移计算
-        let (mx, my) = get_mouse_pos().unwrap();
-        enigo.move_mouse(mx + 210, my + 40, Abs).unwrap();
-        std::thread::sleep(std::time::Duration::from_millis(50));
-        enigo.button(Button::Left, Click).unwrap();
-    });
 }

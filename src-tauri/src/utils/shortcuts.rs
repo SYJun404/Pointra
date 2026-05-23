@@ -1,5 +1,6 @@
 use crate::{
-    commands::word::{get_data_from_selected_text, get_data_under_cursor, show_input_window},
+    utils::get_text::{get_data_from_selected_text, get_data_under_cursor},
+    utils::show_window::show_input_window,
     AppState,
 };
 use keytap::{EventKind, Key, Tap};

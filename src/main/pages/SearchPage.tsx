@@ -16,6 +16,7 @@ function SearchPage() {
     const inputRef = useRef<HTMLInputElement>(null);
     const [input, setinput] = useState<string>("");
     const [results, setResults] = useState<TransResultZHTypes | null>(null);
+    const [loading, setLoading] = useState(false);
     const isPinned = useUiStore((state) => state.isPinned);
 
     // 监听鼠标移入/出窗口
@@ -28,21 +29,45 @@ function SearchPage() {
     const handleSubmit = async (e: any) => {
         e.preventDefault();
         inputRef.current?.blur();
-        const res = await invoke<TransResultZHTypes>("fetch_trans_res", {
-            word: input,
-        });
-        if (res.status === 200) {
-            console.log(res);
-            setResults(res);
-        } else {
+        if (input.trim() === "") return;
+        setLoading(true);
+
+        try {
+            const res = await invoke<TransResultZHTypes>("fetch_trans_res", {
+                word: input,
+            });
+            if (res.status === 200) {
+                setResults(res);
+            } else {
+                setResults(null);
+            }
+        } catch (err) {
+            console.error(err);
+            setResults(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const changeInput = (e: any) => {
+        setinput(e.target.value);
+        if (e.target.value === "") {
             setResults(null);
         }
     };
 
-    const showToast = () => {
-        toast.success("复制成功!", {
-            timeout: 1500,
-        });
+    const handleCopy = async () => {
+        try {
+            if (results === null) return;
+            await navigator.clipboard.writeText(results.data.translate.dit);
+            toast.success("复制成功!", {
+                timeout: 1500,
+            });
+        } catch (err) {
+            toast.danger("复制失败!", {
+                timeout: 1500,
+            });
+        }
     };
 
     return (
@@ -57,7 +82,7 @@ function SearchPage() {
                             type="text"
                             ref={inputRef}
                             value={input}
-                            onChange={(e: any) => setinput(e.target.value)}
+                            onChange={changeInput}
                             placeholder="Translate Anything..."
                             className="w-full h-9 pl-9 pr-8 text-sm rounded-lg bg-white border border-borderMainW
                                    outline-none focus:border-mainBlueW transition-colors text-mainTitleW"
@@ -84,11 +109,16 @@ function SearchPage() {
 
             {/* 历史搜索/搜索结果区域 */}
             <div className="mx-3 flex-1  border border-borderMainW rounded-xl overflow-y-auto no-scrollbar">
-                {results ? (
+                {loading ? (
+                    <div className="flex flex-col items-center mt-20 h-full gap-2">
+                        <div className="w-6 h-6 border-2 border-borderMainW border-t-mainBlueW rounded-full animate-spin" />
+                        <p className="text-sm text-tagW">Loading...</p>
+                    </div>
+                ) : results ? (
                     typeof results.data.wordCard.secondQuery === "string" ? (
                         <p
-                            onClick={showToast}
-                            className="text-sm cursor-pointer text-tagW text-center mt-20  transition-all duration-200 active:scale-90"
+                            onClick={handleCopy}
+                            className="text-sm px-1 cursor-pointer text-tagW text-center mt-20  transition-all duration-200 active:scale-90"
                         >
                             {results.data.translate.dit}
                         </p>
