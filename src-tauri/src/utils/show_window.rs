@@ -1,8 +1,8 @@
-use enigo::{Button, Coordinate::Abs, Direction::Click, Enigo, Mouse, Settings};
+use enigo::{Button, Direction::Click, Enigo, Mouse, Settings};
 use mouse_position::mouse_position::Mouse as MousePosition;
 use tauri::{Emitter, PhysicalPosition, Runtime, WebviewWindow};
 
-pub fn show_main_window<R: Runtime>(window: &WebviewWindow<R>) -> Option<PhysicalPosition<i32>> {
+pub fn show_main_window<R: Runtime>(window: &WebviewWindow<R>, custom_x: i32, custom_y: i32) {
     if let MousePosition::Position { x, y } = MousePosition::get_mouse_position() {
         let monitors = window.available_monitors().unwrap_or_default();
 
@@ -24,7 +24,7 @@ pub fn show_main_window<R: Runtime>(window: &WebviewWindow<R>) -> Option<Physica
 
         let monitor = match monitor.or_else(|| monitors.first()) {
             Some(m) => m,
-            None => return None,
+            None => return,
         };
 
         let monitor_pos = monitor.position();
@@ -52,8 +52,8 @@ pub fn show_main_window<R: Runtime>(window: &WebviewWindow<R>) -> Option<Physica
         }
 
         let target_pos = PhysicalPosition {
-            x: final_x,
-            y: final_y,
+            x: final_x - (custom_x * scale as i32),
+            y: final_y - (custom_y * scale as i32),
         };
 
         // 移动位置，等待跨屏合成完成
@@ -65,13 +65,6 @@ pub fn show_main_window<R: Runtime>(window: &WebviewWindow<R>) -> Option<Physica
         let _ = window.set_position(target_pos);
         let _ = window.show();
         let _ = window.set_focus();
-
-        Some(PhysicalPosition {
-            x: final_x,
-            y: final_y,
-        })
-    } else {
-        None
     }
 }
 
@@ -80,18 +73,8 @@ pub fn show_input_window(window: WebviewWindow) {
         let mut enigo = Enigo::new(&Settings::default()).unwrap();
         window.emit("win-router", "search").ok();
 
-        if let Some(win_pos) = show_main_window(&window) {
-            if let Ok(scale) = window.scale_factor() {
-                let win_logical_x = (win_pos.x as f64 / scale) as i32;
-                let win_logical_y = (win_pos.y as f64 / scale) as i32;
-
-                let click_x = win_logical_x + 190;
-                let click_y = win_logical_y + 30;
-
-                enigo.move_mouse(click_x, click_y, Abs).unwrap();
-                std::thread::sleep(std::time::Duration::from_millis(50));
-                enigo.button(Button::Left, Click).unwrap();
-            }
-        }
+        show_main_window(&window, 150, 32);
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        enigo.button(Button::Left, Click).unwrap();
     });
 }

@@ -88,9 +88,9 @@ function SearchPage() {
                             ref={inputRef}
                             value={input}
                             onChange={changeInput}
-                            placeholder="Translate Anything..."
+                            placeholder="Type Something..."
                             className="w-full h-9 px-8 text-sm rounded-lg bg-white border border-borderMainW
-                                   outline-none focus:border-mainBlueW transition-colors text-mainTitleW"
+                                   outline-none focus:border-mainBlueW transition-colors text-mainTitleW focus:cursor-none"
                         />
                     </form>
                     <Magnifier
@@ -134,7 +134,7 @@ function SearchPage() {
                     )
                 ) : (
                     <p className="text-sm text-tagW text-center mt-20">
-                        输入关键词开始搜索
+                        输入文字，按 Enter 翻译
                     </p>
                 )}
             </div>

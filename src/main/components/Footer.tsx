@@ -11,14 +11,14 @@ function Footer({ path }: { path: string }) {
     const ACTION_BUTTONS = [
         {
             id: "search",
-            router: "/",
+            func: () => console.log(123),
             icon: (
                 <ClockArrowRotateLeft color="#bbbbbb" height={15} width={15} />
             ),
         },
         {
             id: "home",
-            router: "/search",
+            func: () => navigate("/search"),
             icon: <Magnifier color="#bbbbbb" height={14} width={14} />,
         },
     ];
@@ -52,12 +52,9 @@ function Footer({ path }: { path: string }) {
                         );
                         if (!activeBtn) return null;
 
-                        const { id, icon, router } = activeBtn;
+                        const { id, icon, func } = activeBtn;
                         return (
-                            <IconButton
-                                key={id}
-                                onClick={() => navigate(router)}
-                            >
+                            <IconButton key={id} onClick={func}>
                                 {icon}
                             </IconButton>
                         );
