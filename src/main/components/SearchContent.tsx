@@ -1,4 +1,5 @@
 import { SecondQueryZH } from "../types/transResult";
+import { useNavigate } from "react-router-dom";
 
 const posStyles: Record<string, string> = {
     "n.": "bg-blue-50 border border-blue-200 text-blue-600",
@@ -64,9 +65,11 @@ function getPosStyle(pos: string) {
 function SecondQueryCard({
     item,
     isLast,
+    onClick,
 }: {
     item: SecondQueryZH;
     isLast: boolean;
+    onClick: (word: string) => void;
 }) {
     const { pos, meanings } = parseEntry(item.v);
 
@@ -76,7 +79,10 @@ function SecondQueryCard({
                 ${isLast ? "" : "border-b border-borderSubW"}`}
         >
             <div className="flex items-baseline justify-between">
-                <span className="text-sm font-medium text-mainBlueW cursor-pointer">
+                <span
+                    className="text-sm font-medium text-mainBlueW cursor-pointer"
+                    onClick={() => onClick(item.k)}
+                >
                     {item.k}
                 </span>
                 {pos && (
@@ -102,6 +108,11 @@ function SecondQueryCard({
 }
 
 function SearchContent({ results }: { results: SecondQueryZH[] }) {
+    const navigate = useNavigate();
+
+    const handleClick = (word: string) => {
+        navigate("/", { state: { word: word } });
+    };
     return (
         <div className="flex flex-col">
             {results.map((item, index) => (
@@ -109,6 +120,7 @@ function SearchContent({ results }: { results: SecondQueryZH[] }) {
                     key={index}
                     item={item}
                     isLast={index === results.length - 1}
+                    onClick={handleClick}
                 />
             ))}
         </div>

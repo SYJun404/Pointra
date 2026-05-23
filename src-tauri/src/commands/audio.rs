@@ -56,16 +56,16 @@ pub async fn play_phonetic_url(url: String, state: State<'_, AppState>) -> Resul
     Ok(())
 }
 
-/// 设置音量 (0.0 ~ 1.0)
-#[tauri::command]
-pub fn set_volume(volume: f32, state: State<'_, AppState>) -> Result<(), String> {
-    let vol = volume.clamp(0.0, 1.0);
+// 设置音量 (0.0 ~ 1.0)
+// #[tauri::command]
+// pub fn set_volume(volume: f32, state: State<'_, AppState>) -> Result<(), String> {
+//     let vol = volume.clamp(0.0, 1.0);
 
-    *state.audio_state.volume.lock().unwrap() = vol;
+//     *state.audio_state.volume.lock().unwrap() = vol;
 
-    // 如果当前有 sink 也立即生效
-    if let Some(sink) = state.audio_state.sink.lock().unwrap().as_ref() {
-        sink.set_volume(vol);
-    }
-    Ok(())
-}
+//     // 如果当前有 sink 也立即生效
+//     if let Some(sink) = state.audio_state.sink.lock().unwrap().as_ref() {
+//         sink.set_volume(vol);
+//     }
+//     Ok(())
+// }

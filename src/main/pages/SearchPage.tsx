@@ -1,26 +1,23 @@
 import { Magnifier, Xmark } from "@gravity-ui/icons";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Header from "../components/Header";
 import Footer from "../components/Footer";
 import { TransResultZHTypes } from "../types/transResult";
 import { invoke } from "@tauri-apps/api/core";
 import SearchContent from "../components/SearchContent";
-import { useWindowListener, useOnWindowChange } from "../utils/useCustom";
-import useUiStore from "../store/useUiStore";
-import { useNavigate } from "react-router-dom";
+import { useOnWindowChange } from "../utils/useCustom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "@heroui/react";
 import CustomToast from "../components/CustomToast";
 
 function SearchPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const inputRef = useRef<HTMLInputElement>(null);
     const [input, setinput] = useState<string>("");
     const [results, setResults] = useState<TransResultZHTypes | null>(null);
     const [loading, setLoading] = useState(false);
-    const isPinned = useUiStore((state) => state.isPinned);
 
-    // 监听鼠标移入/出窗口
-    useWindowListener(isPinned);
     // 窗口显示时执行的回调
     useOnWindowChange(() => {
         navigate("/");
@@ -70,6 +67,14 @@ function SearchPage() {
         }
     };
 
+    useEffect(() => {
+        if (location.state) {
+            const res: TransResultZHTypes = location.state.data;
+            setinput(res.data.translate.text);
+            setResults(res);
+        }
+    }, []);
+
     return (
         <div className="pt-3 flex flex-col gap-3 h-screen overflow-hidden">
             <CustomToast />
@@ -84,7 +89,7 @@ function SearchPage() {
                             value={input}
                             onChange={changeInput}
                             placeholder="Translate Anything..."
-                            className="w-full h-9 pl-9 pr-8 text-sm rounded-lg bg-white border border-borderMainW
+                            className="w-full h-9 px-8 text-sm rounded-lg bg-white border border-borderMainW
                                    outline-none focus:border-mainBlueW transition-colors text-mainTitleW"
                         />
                     </form>
@@ -107,7 +112,7 @@ function SearchPage() {
                 </div>
             </div>
 
-            {/* 历史搜索/搜索结果区域 */}
+            {/* 搜索结果区域 */}
             <div className="mx-3 flex-1  border border-borderMainW rounded-xl overflow-y-auto no-scrollbar">
                 {loading ? (
                     <div className="flex flex-col items-center mt-20 h-full gap-2">
@@ -118,7 +123,7 @@ function SearchPage() {
                     typeof results.data.wordCard.secondQuery === "string" ? (
                         <p
                             onClick={handleCopy}
-                            className="text-sm px-1 cursor-pointer text-tagW text-center mt-20  transition-all duration-200 active:scale-90"
+                            className="text-sm px-2 cursor-pointer text-tagW text-center mt-20  transition-all duration-200 active:scale-90"
                         >
                             {results.data.translate.dit}
                         </p>

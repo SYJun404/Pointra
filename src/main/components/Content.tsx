@@ -2,6 +2,7 @@ import { Volume, VolumeXmark, Copy } from "@gravity-ui/icons";
 import { TransResultTypes, UsualDict, Voice } from "../types/transResult";
 import Loading from "./Loading";
 import { invoke } from "@tauri-apps/api/core";
+import { toast } from "@heroui/react";
 
 const AudioPlayer = ({
     voice,
@@ -97,12 +98,26 @@ function Content({ transResult }: { transResult: TransResultTypes | null }) {
         </div>
     );
 
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(translate.text);
+            toast.success("复制成功!", {
+                timeout: 1500,
+            });
+        } catch (err) {
+            toast.danger("复制失败!", {
+                timeout: 1500,
+            });
+        }
+    };
+
     return (
         <div className="mx-3 flex flex-col p-3 pt-2.5 flex-1 min-h-0 border-borderMainW border rounded-xl">
             <main className="flex flex-col gap-2 ">
                 <div className="flex justify-between items-center">
                     <p className="text-xl text-mainTitleW">{translate.text}</p>
                     <div
+                        onClick={handleCopy}
                         className={`
                             flex items-center justify-center w-6 h-6 rounded-md border cursor-pointer
                             transition-all duration-200 active:scale-90 bg-blue-50 border-blue-200

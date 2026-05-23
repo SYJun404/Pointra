@@ -2,7 +2,10 @@ import { useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function useWindowListener(isPinned: boolean) {
+export function useWindowListener(
+    isPinned: boolean,
+    setIsPinned: (isPinned: boolean) => void,
+) {
     const isPinnedRef = useRef(isPinned);
 
     useEffect(() => {
@@ -26,6 +29,9 @@ export function useWindowListener(isPinned: boolean) {
                 if (!isPinnedRef.current) {
                     getCurrentWindow().hide();
                 }
+            }
+            if (e.key === "F1") {
+                setIsPinned(!isPinnedRef.current);
             }
         };
 
