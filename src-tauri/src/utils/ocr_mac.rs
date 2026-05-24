@@ -54,7 +54,7 @@ unsafe fn build_english_request() -> Retained<VNRecognizeTextRequest> {
 
 /// 在独立线程里跑一次空白图推理，预热 CoreML / ANE
 fn warmup_async(state: Arc<OcrState>) {
-    std::thread::spawn(move || {
+    tauri::async_runtime::spawn(async move {
         if let Err(e) = warmup_once(&state) {
             eprintln!("[OCR warmup] 预热失败（不影响功能）: {e}");
         } else {
