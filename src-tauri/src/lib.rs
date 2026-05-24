@@ -7,12 +7,10 @@ use reqwest::Client;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 use tauri_plugin_global_shortcut::ShortcutState;
-use utils::capture::ScreenCache;
 use utils::ocr_mac::OcrState;
 use utils::shortcuts::{handle_shortcut_event, init_ctrl_listener, init_shortcuts};
 
 pub struct AppState {
-    screen_cache: ScreenCache,
     ocr_state: Arc<OcrState>,
     client: Client,
     window_locked: Arc<AtomicBool>,
@@ -22,7 +20,6 @@ pub struct AppState {
 pub fn run() {
     tauri::Builder::default()
         .manage(AppState {
-            screen_cache: ScreenCache::new(),
             ocr_state: OcrState::new(),
             client: Client::new(),
             window_locked: Arc::new(AtomicBool::new(false)),

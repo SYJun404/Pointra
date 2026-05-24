@@ -71,16 +71,12 @@ pub fn get_data_from_selected_text(window: WebviewWindow) {
 }
 
 pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWindow) {
-    if window.is_visible().unwrap() {
-        return;
-    }
-
     #[cfg(target_os = "macos")]
     {
         // 1. 处理截图逻辑，当前的截屏只适合Mac OS
-        let capture_res = capture_around_cursor(&app_state.screen_cache, 200, 40);
+        let capture_res = capture_around_cursor(300, 80);
 
-        let Ok((img, rel_x, rel_y)) = capture_res else {
+        let Ok(img) = capture_res else {
             return;
         };
 
@@ -91,11 +87,8 @@ pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWind
             return;
         };
 
-        // 3. 坐标归一化与单词选择
-        let nx = rel_x as f64 / img.width() as f64;
-        let ny = 1.0 - rel_y as f64 / img.height() as f64;
-
-        if let Some(word) = select_word(&words, nx, ny) {
+        // 3. 单词选择
+        if let Some(word) = select_word(&words) {
             if !word.is_empty() {
                 // 显示窗口
                 show_main_window(&window, 0, 0);

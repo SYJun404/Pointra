@@ -1,70 +1,55 @@
 use anyhow::Context;
 use core_graphics::display::CGDisplay;
+use core_graphics::event::CGEvent;
+use core_graphics::event_source::{CGEventSource, CGEventSourceStateID};
 use core_graphics::geometry::{CGPoint, CGRect, CGSize};
 use image::DynamicImage;
-use mouse_position::mouse_position::Mouse;
-use screenshots::Screen;
 
-#[derive(Debug)]
-pub struct ScreenCache {
-    // 缓存所有屏幕对象
-    pub screens: Vec<Screen>,
-}
-
-impl ScreenCache {
-    pub fn new() -> Self {
-        Self {
-            screens: Screen::all().unwrap_or_default(),
+fn display_under_mouse(mouse: CGPoint) -> Option<(CGDisplay, CGRect)> {
+    let ids = CGDisplay::active_displays().ok()?;
+    for id in ids {
+        let display = CGDisplay::new(id);
+        let bounds = display.bounds();
+        if bounds.contains(&mouse) {
+            return Some((display, bounds));
         }
     }
-    // todo
-    // 提供一个刷新方法，万一用户插拔了显示器
-    // pub fn refresh(&self) -> anyhow::Result<()> {
-    //     let mut cache = self.screens.lock().unwrap();
-    //     *cache = Screen::all().map_err(|e| anyhow::anyhow!(e.to_string()))?;
-    //     Ok(())
-    // }
+    None
 }
 
-pub fn get_mouse_pos() -> anyhow::Result<(i32, i32)> {
-    match Mouse::get_mouse_position() {
-        Mouse::Position { x, y } => Ok((x, y)),
-        Mouse::Error => Err(anyhow::anyhow!("无法获取鼠标坐标")),
-    }
-}
+pub fn capture_around_cursor(capture_w: i32, capture_h: i32) -> anyhow::Result<DynamicImage> {
+    // 获取鼠标位置
+    let source = CGEventSource::new(CGEventSourceStateID::CombinedSessionState)
+        .expect("failed to create event source");
+    let event = CGEvent::new(source).expect("failed to create event");
+    let mouse_pos: CGPoint = event.location();
 
-pub fn capture_around_cursor(
-    screen_cache: &ScreenCache,
-    half_w: i32,
-    half_h: i32,
-) -> anyhow::Result<(DynamicImage, i32, i32)> {
-    let (mx, my) = get_mouse_pos()?;
+    // 找到鼠标所在显示器
+    let (display, disp_bounds) =
+        display_under_mouse(mouse_pos).context("mouse is not on any active display")?;
 
-    let screens = &screen_cache.screens;
-    let screen = screens
-        .iter()
-        .find(|s| {
-            let d = &s.display_info;
-            mx >= d.x && mx < d.x + d.width as i32 && my >= d.y && my < d.y + d.height as i32
-        })
-        .ok_or_else(|| anyhow::anyhow!("未找到对应屏幕"))?;
+    let global_rect = CGRect::new(
+        &CGPoint::new(
+            mouse_pos.x - capture_w as f64 / 2.0,
+            mouse_pos.y - capture_h as f64 / 2.0,
+        ),
+        &CGSize::new(capture_w as f64, capture_h as f64),
+    );
 
-    let d = &screen.display_info;
-    let scale = d.scale_factor;
+    let local_rect = CGRect::new(
+        &CGPoint::new(
+            global_rect.origin.x - disp_bounds.origin.x,
+            global_rect.origin.y - disp_bounds.origin.y,
+        ),
+        &global_rect.size,
+    );
 
-    let x = ((mx - half_w).max(d.x) as f32 / scale) as f64;
-    let y = ((my - half_h).max(d.y) as f32 / scale) as f64;
-    let w = ((half_w * 2) as f32 / scale) as f64;
-    let h = ((half_h * 2) as f32 / scale) as f64;
-
-    let rect = CGRect::new(&CGPoint::new(x, y), &CGSize::new(w, h));
-
-    // ===== 截图 =====
-    let cg_image = CGDisplay::main()
-        .image_for_rect(rect)
+    // 从对应显示器截图
+    let cg_image = display
+        .image_for_rect(local_rect)
         .context("capture failed")?;
 
-    // ===== CGImage → DynamicImage =====
+    // CGImage → DynamicImage
     let (img_w, img_h) = (cg_image.width(), cg_image.height());
     let src_stride = cg_image.bytes_per_row();
     let raw_data = cg_image.data();
@@ -86,8 +71,5 @@ pub fn capture_around_cursor(
         .map(DynamicImage::ImageRgba8)
         .context("图像字节长度不匹配")?;
 
-    let rel_x = (mx as f32 / scale) as i32 - x as i32;
-    let rel_y = (my as f32 / scale) as i32 - y as i32;
-
-    Ok((img, rel_x, rel_y))
+    Ok(img)
 }

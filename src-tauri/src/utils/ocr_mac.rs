@@ -438,25 +438,36 @@ pub fn recognize_words(
 }
 
 // ── 命中检测 ──────────────────────────────────────
-pub fn select_word(words: &[WordBox], nx: f64, ny: f64) -> Option<String> {
-    let nearest = |tolerance: f64| -> Option<&WordBox> {
-        let candidates: Vec<&WordBox> = words
-            .iter()
-            .filter(|w| {
-                nx >= w.x - tolerance
-                    && nx <= w.x + w.w + tolerance
-                    && ny >= w.y - tolerance
-                    && ny <= w.y + w.h + tolerance
-            })
-            .collect();
-        candidates.into_iter().min_by(|a, b| {
-            let da = ((a.x + a.w / 2.0 - nx).powi(2) + (a.y + a.h / 2.0 - ny).powi(2)).sqrt();
-            let db = ((b.x + b.w / 2.0 - nx).powi(2) + (b.y + b.h / 2.0 - ny).powi(2)).sqrt();
-            da.partial_cmp(&db).unwrap_or(std::cmp::Ordering::Equal)
-        })
-    };
+pub fn select_word(words: &[WordBox]) -> Option<String> {
+    const CX: f64 = 0.5;
+    const CY: f64 = 0.5;
+    const TOL: f64 = 0.004;
 
-    nearest(0.0)
-        .or_else(|| nearest(0.004))
-        .map(|w| w.text.clone())
+    let mut best_exact: Option<(f64, &WordBox)> = None;
+    let mut best_fuzzy: Option<(f64, &WordBox)> = None;
+
+    for w in words {
+        let cx = w.x + w.w * 0.5;
+        let cy = w.y + w.h * 0.5;
+        let dist2 = (cx - CX).powi(2) + (cy - CY).powi(2);
+
+        let in_exact = CX >= w.x && CX <= w.x + w.w && CY >= w.y && CY <= w.y + w.h;
+        let in_fuzzy = !in_exact
+            && CX >= w.x - TOL
+            && CX <= w.x + w.w + TOL
+            && CY >= w.y - TOL
+            && CY <= w.y + w.h + TOL;
+
+        if in_exact {
+            if best_exact.map_or(true, |(d, _)| dist2 < d) {
+                best_exact = Some((dist2, w));
+            }
+        } else if in_fuzzy {
+            if best_fuzzy.map_or(true, |(d, _)| dist2 < d) {
+                best_fuzzy = Some((dist2, w));
+            }
+        }
+    }
+
+    best_exact.or(best_fuzzy).map(|(_, w)| w.text.clone())
 }
