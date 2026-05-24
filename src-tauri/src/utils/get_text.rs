@@ -75,15 +75,15 @@ pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWind
         return;
     }
 
-    // 1. 处理截图逻辑，捕获错误并通过事件通知前端
-    let capture_res = capture_around_cursor(&app_state.screen_cache, 200, 40);
-
-    let Ok((img, rel_x, rel_y)) = capture_res else {
-        return;
-    };
-
     #[cfg(target_os = "macos")]
     {
+        // 1. 处理截图逻辑，当前的截屏只适合Mac OS
+        let capture_res = capture_around_cursor(&app_state.screen_cache, 200, 40);
+
+        let Ok((img, rel_x, rel_y)) = capture_res else {
+            return;
+        };
+
         // 2. OCR 识别
         let words_res = recognize_words(&img, &app_state.ocr_state);
 

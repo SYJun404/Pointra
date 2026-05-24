@@ -49,3 +49,4 @@ objc2-foundation = { version = "0.3.2", features = [
     "NSEnumerator", "NSObject"
 ] }
 objc2-vision = "0.3.2"
+core-graphics = "0.24"

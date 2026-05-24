@@ -37,23 +37,27 @@ pub fn show_main_window<R: Runtime>(window: &WebviewWindow<R>, custom_x: i32, cu
         let phys_y = (y as f64 * scale) as i32;
         let offset = (10.0 * scale) as i32;
 
-        let mut final_x = phys_x + offset;
-        let mut final_y = phys_y + offset;
+        let mut final_x = phys_x + offset - (custom_x * scale as i32);
+        let mut final_y = phys_y + offset - (custom_y * scale as i32);
 
+        // 超出右边界，进行调整
         let monitor_right_edge = monitor_pos.x + monitor_size.width as i32;
         if final_x + window_phys_w > monitor_right_edge {
-            final_x = monitor_right_edge - window_phys_w - offset;
-            final_y += offset;
+            final_x = monitor_right_edge - window_phys_w + (offset * 2);
         }
-
+        // 超出下边界，进行调整
         let monitor_bottom_edge = monitor_pos.y + monitor_size.height as i32;
         if final_y + window_phys_h > monitor_bottom_edge {
-            final_y = monitor_bottom_edge - window_phys_h - offset;
+            final_y = monitor_bottom_edge - window_phys_h;
+        }
+        // 超出左边界，进行调整
+        if final_x < 0 {
+            final_x = 0;
         }
 
         let target_pos = PhysicalPosition {
-            x: final_x - (custom_x * scale as i32),
-            y: final_y - (custom_y * scale as i32),
+            x: final_x,
+            y: final_y,
         };
 
         // 移动位置，等待跨屏合成完成
@@ -74,7 +78,7 @@ pub fn show_input_window(window: WebviewWindow) {
         window.emit("win-router", "search").ok();
 
         show_main_window(&window, 150, 32);
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(std::time::Duration::from_millis(33));
         enigo.button(Button::Left, Click).unwrap();
     });
 }

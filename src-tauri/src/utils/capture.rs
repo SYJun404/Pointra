@@ -1,3 +1,6 @@
+use anyhow::Context;
+use core_graphics::display::CGDisplay;
+use core_graphics::geometry::{CGPoint, CGRect, CGSize};
 use image::DynamicImage;
 use mouse_position::mouse_position::Mouse;
 use screenshots::Screen;
@@ -49,23 +52,42 @@ pub fn capture_around_cursor(
     let d = &screen.display_info;
     let scale = d.scale_factor;
 
-    let x = ((mx - half_w).max(d.x) as f32 / scale) as i32;
-    let y = ((my - half_h).max(d.y) as f32 / scale) as i32;
-    let w = ((half_w * 2) as f32 / scale) as u32;
-    let h = ((half_h * 2) as f32 / scale) as u32;
+    let x = ((mx - half_w).max(d.x) as f32 / scale) as f64;
+    let y = ((my - half_h).max(d.y) as f32 / scale) as f64;
+    let w = ((half_w * 2) as f32 / scale) as f64;
+    let h = ((half_h * 2) as f32 / scale) as f64;
 
-    let captured = screen.capture_area(x, y, w, h)?;
+    let rect = CGRect::new(&CGPoint::new(x, y), &CGSize::new(w, h));
 
-    // 通过原始字节 + 尺寸重建，完全绕过类型版本冲突
-    let (img_w, img_h) = (captured.width(), captured.height());
-    let raw_bytes: Vec<u8> = captured.into_raw(); // 消耗 captured，取出字节
+    // ===== 截图 =====
+    let cg_image = CGDisplay::main()
+        .image_for_rect(rect)
+        .context("capture failed")?;
 
-    let img = image::RgbaImage::from_raw(img_w, img_h, raw_bytes)
+    // ===== CGImage → DynamicImage =====
+    let (img_w, img_h) = (cg_image.width(), cg_image.height());
+    let src_stride = cg_image.bytes_per_row();
+    let raw_data = cg_image.data();
+    let raw_ref = raw_data.bytes();
+
+    // macOS CGImage 像素格式为 BGRA（kCGBitmapByteOrder32Little），
+    // 且 bytes_per_row 可能包含 stride 填充。逐行复制并转为 RGBA。
+    let row_bytes = (img_w * 4) as usize;
+    let mut rgba_bytes: Vec<u8> = Vec::with_capacity((img_h as usize) * row_bytes);
+
+    for y in 0..img_h as usize {
+        let row = &raw_ref[y * src_stride..y * src_stride + row_bytes];
+        for px in row.chunks(4) {
+            rgba_bytes.extend_from_slice(&[px[2], px[1], px[0], px[3]]);
+        }
+    }
+
+    let img = image::RgbaImage::from_raw(img_w as u32, img_h as u32, rgba_bytes)
         .map(DynamicImage::ImageRgba8)
-        .ok_or_else(|| anyhow::anyhow!("图像字节长度不匹配"))?;
+        .context("图像字节长度不匹配")?;
 
-    let rel_x = (mx as f32 / scale) as i32 - x;
-    let rel_y = (my as f32 / scale) as i32 - y;
+    let rel_x = (mx as f32 / scale) as i32 - x as i32;
+    let rel_y = (my as f32 / scale) as i32 - y as i32;
 
     Ok((img, rel_x, rel_y))
 }
