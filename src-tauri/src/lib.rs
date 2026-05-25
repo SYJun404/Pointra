@@ -9,6 +9,7 @@ use std::sync::Arc;
 use tauri_plugin_global_shortcut::ShortcutState;
 use utils::ocr_mac::OcrState;
 use utils::shortcuts::{handle_shortcut_event, init_ctrl_listener, init_shortcuts};
+use utils::tray;
 
 pub struct AppState {
     ocr_state: Arc<OcrState>,
@@ -33,9 +34,10 @@ pub fn run() {
             play_phonetic_url
         ])
         .setup(|app| {
+            tray::init(app)?;
             #[cfg(target_os = "macos")]
             {
-                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                // app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
             let handle = app.handle().clone();
             init_ctrl_listener(handle);

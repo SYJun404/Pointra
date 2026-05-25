@@ -3,6 +3,39 @@
 version = 4
 
 [[package]]
+name = "Pointra"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "arboard",
+ "core-graphics 0.24.0",
+ "device_query",
+ "enigo",
+ "image 0.25.10",
+ "keytap",
+ "md5",
+ "mouse_position",
+ "objc2",
+ "objc2-core-foundation",
+ "objc2-foundation",
+ "objc2-vision",
+ "reqwest",
+ "rodio",
+ "screenshots",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-nspanel",
+ "tauri-plugin-global-shortcut",
+ "tauri-plugin-opener",
+ "tauri-plugin-store",
+ "tokio",
+ "uuid",
+ "window-vibrancy 0.7.1",
+]
+
+[[package]]
 name = "adler2"
 version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4036,39 +4069,6 @@ dependencies = [
  "fdeflate",
  "flate2",
  "miniz_oxide",
-]
-
-[[package]]
-name = "pointra"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "arboard",
- "core-graphics 0.24.0",
- "device_query",
- "enigo",
- "image 0.25.10",
- "keytap",
- "md5",
- "mouse_position",
- "objc2",
- "objc2-core-foundation",
- "objc2-foundation",
- "objc2-vision",
- "reqwest",
- "rodio",
- "screenshots",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-nspanel",
- "tauri-plugin-global-shortcut",
- "tauri-plugin-opener",
- "tauri-plugin-store",
- "tokio",
- "uuid",
- "window-vibrancy 0.7.1",
 ]
 
 [[package]]
