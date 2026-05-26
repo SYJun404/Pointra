@@ -32,8 +32,8 @@ tauri_panel! {
 pub fn apply_window_effects(window: tauri::Window) {
     #[cfg(target_os = "macos")]
     {
-        apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)
-            .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
+        // apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)
+        //     .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
 
         if let Some(web_window) = window.get_webview_window("main") {
             // 打开调试工具
@@ -59,11 +59,11 @@ pub fn apply_window_effects(window: tauri::Window) {
         }
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        apply_blur(&window, Some((18, 18, 18, 125)))
-            .expect("Unsupported platform! 'apply_blur' is only supported on Windows");
-    }
+    // #[cfg(target_os = "windows")]
+    // {
+    //     apply_blur(&window, Some((18, 18, 18, 125)))
+    //         .expect("Unsupported platform! 'apply_blur' is only supported on Windows");
+    // }
 }
 
 // 更新鼠标是否在窗口内

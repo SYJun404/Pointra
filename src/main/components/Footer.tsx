@@ -40,7 +40,7 @@ function Footer({ path }: { path: string }) {
     );
 
     return (
-        <div className="mt-auto bg-subBgW h-10 px-3 py-2 rounded-b-3xl border-t border-borderSubW">
+        <div className="mt-auto bg-subBgW h-10 px-3 py-2 rounded-b-[18px] border-t border-borderSubW">
             <div className="flex items-center h-full relative gap-2">
                 <img className="w-4 h-4" src={logo}></img>
                 <p className="text-sm text-tagW absolute left-6">Pointra</p>

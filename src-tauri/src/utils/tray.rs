@@ -1,20 +1,47 @@
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    Emitter, Manager, Runtime,
+    AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder,
 };
+#[allow(unused_imports)]
 
+pub fn create_setting_win<R: Runtime>(app: &AppHandle<R>) {
+    let window_builder = WebviewWindowBuilder::new(
+        app,
+        "setting",
+        WebviewUrl::App("src/setting/index.html".into()),
+    )
+    .title("Pointra")
+    .inner_size(400.0, 600.0)
+    .resizable(false)
+    .visible(false)
+    .decorations(false)
+    .center()
+    .transparent(true)
+    .shadow(true)
+    .skip_taskbar(true);
+
+    match window_builder.build() {
+        Ok(window) => {
+            let _ = window.show();
+            let _ = window.set_focus();
+        }
+        Err(e) => {
+            println!("Failed to build main window: {}", e);
+        }
+    }
+}
 /// 初始化系统托盘
 pub fn init<R: Runtime>(app: &tauri::App<R>) -> Result<(), tauri::Error> {
     let handle = app.handle();
 
     // 1. 创建托盘菜单项
-    let search_item = MenuItem::with_id(handle, "search", "搜索界面", true, None::<&str>)?;
+    let setting_item = MenuItem::with_id(handle, "setting", "设置界面", true, None::<&str>)?;
+    let search_item = MenuItem::with_id(handle, "search", "翻译文本", true, None::<&str>)?;
     let quit_item = MenuItem::with_id(handle, "quit", "退出软件", true, None::<&str>)?;
-    let author_item = MenuItem::with_id(handle, "author", "设置界面", true, None::<&str>)?;
 
     // 将菜单项组合成菜单
-    let menu = Menu::with_items(handle, &[&author_item, &search_item, &quit_item])?;
+    let menu = Menu::with_items(handle, &[&setting_item, &search_item, &quit_item])?;
 
     // 2. 构建托盘
     let _tray = TrayIconBuilder::with_id("main-tray")
@@ -28,10 +55,19 @@ pub fn init<R: Runtime>(app: &tauri::App<R>) -> Result<(), tauri::Error> {
             "search" => {
                 if let Some(window) = app.get_webview_window("main") {
                     window.emit("win-router", "search").ok();
+                    let _ = window.center();
                     let _ = window.show();
                     let _ = window.set_focus();
                 }
             }
+            "setting" => {
+                if let Some(window) = app.get_webview_window("setting") {
+                    let _ = window.close();
+                } else {
+                    create_setting_win(app);
+                }
+            }
+
             _ => {}
         })
         // 响应托盘图标左键点击事件

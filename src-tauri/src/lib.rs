@@ -37,7 +37,7 @@ pub fn run() {
             tray::init(app)?;
             #[cfg(target_os = "macos")]
             {
-                // app.set_activation_policy(tauri::ActivationPolicy::Accessory);
+                app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
             let handle = app.handle().clone();
             init_ctrl_listener(handle);

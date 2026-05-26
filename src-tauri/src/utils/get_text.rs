@@ -74,7 +74,7 @@ pub fn get_data_under_cursor(app_state: State<'_, AppState>, window: WebviewWind
     #[cfg(target_os = "macos")]
     {
         // 1. 处理截图逻辑，当前的截屏只适合Mac OS
-        let capture_res = capture_around_cursor(300, 80);
+        let capture_res = capture_around_cursor(200, 40);
 
         let Ok(img) = capture_res else {
             return;

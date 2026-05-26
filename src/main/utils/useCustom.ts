@@ -18,9 +18,8 @@ export function useWindowListener(
         };
 
         const handleMouseLeave = () => {
-            invoke("update_hover_status", { hovered: false });
-
             if (!isPinnedRef.current) {
+                invoke("update_hover_status", { hovered: false });
                 getCurrentWindow().hide();
             }
         };
