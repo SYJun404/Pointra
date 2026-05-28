@@ -1,9 +1,10 @@
 import "../assets/css/App.css";
 import { useShortcutManager } from "./hooks";
-import { SettingToast, SettingHeader } from "./components/SettingHeader";
+import { SettingHeader } from "./components/SettingHeader";
 import { GeneralSection } from "./components/GeneralSection";
 import { ShortcutSection } from "./components/ShortcutSection";
 import { AboutSection } from "./components/AboutSection";
+import CustomToast from "../main/components/CustomToast";
 
 function SettingPage() {
     const {
@@ -13,19 +14,17 @@ function SettingPage() {
         recordingId,
         recordingRef,
         conflictIds,
-        toastMsg,
         toggleGeneral,
         startRecording,
         cancelRecording,
         handleKeyDown,
         resetToDefault,
-        resetAllShortcuts,
         handleSave,
     } = useShortcutManager();
 
     return (
         <div className="h-screen rounded-4xl flex flex-col bg-white overflow-hidden select-none">
-            <SettingToast toastMsg={toastMsg} />
+            <CustomToast placement="top" />
             <SettingHeader />
 
             {/* ============ 滚动内容 ============ */}
@@ -44,7 +43,6 @@ function SettingPage() {
                     onCancelRecording={cancelRecording}
                     onKeyDown={handleKeyDown}
                     onResetOne={resetToDefault}
-                    onResetAll={resetAllShortcuts}
                 />
 
                 <AboutSection />

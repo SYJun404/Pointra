@@ -30,9 +30,13 @@ const variantStyles: Record<string, { indicator: string; title: string }> = {
     },
 };
 
-function CustomToast() {
+function CustomToast({
+    placement = "bottom",
+}: {
+    placement?: "top" | "bottom";
+}) {
     return (
-        <Toast.Provider placement="bottom" className="bottom-13">
+        <Toast.Provider placement={placement} className="bottom-13">
             {({ toast: toastItem }) => {
                 const content = toastItem.content as ToastContentValue;
                 const variant = content.variant ?? "default";

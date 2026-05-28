@@ -1,24 +1,81 @@
 /** 将 KeyboardEvent 转成规范 keys 数组 */
-export function eventToKeys(e: React.KeyboardEvent): string[] {
-    const parts: string[] = [];
-    if (e.ctrlKey) parts.push("Ctrl");
-    if (e.metaKey) parts.push("Cmd");
-    if (e.altKey) parts.push("Alt");
-    if (e.shiftKey) parts.push("Shift");
+const codeToKey = (code: string, fallbackKey: string): string => {
+    // 1. 处理字母键 (KeyA - KeyZ -> A - Z)
+    if (code.startsWith("Key")) {
+        return code.slice(3).toUpperCase();
+    }
 
-    const key =
+    // 2. 处理数字键 (Digit0 - Digit9 -> 0 - 9)
+    if (code.startsWith("Digit")) {
+        return code.slice(5);
+    }
+
+    // 3. 处理小键盘数字 (Numpad0 - Numpad9)
+    if (code.startsWith("Numpad") && code.length === 7) {
+        return code.slice(6);
+    }
+
+    // 4. 处理常见特殊按键的映射
+    const specialKeysMap: Record<string, string> = {
+        Space: "Space",
+        Enter: "Enter",
+        Tab: "Tab",
+        Escape: "Esc",
+        Backspace: "Backspace",
+        Delete: "Delete",
+        ArrowUp: "Up",
+        ArrowDown: "Down",
+        ArrowLeft: "Left",
+        ArrowRight: "Right",
+        Minus: "-",
+        Equal: "=",
+        BracketLeft: "[",
+        BracketRight: "]",
+        Semicolon: ";",
+        Quote: "'",
+        Backquote: "`",
+        Comma: ",",
+        Period: ".",
+        Slash: "/",
+        Backslash: "\\",
+    };
+
+    return specialKeysMap[code] || fallbackKey;
+};
+
+/** 将 KeyboardEvent 转成规范 keys 数组 */
+export const eventToKeys = (
+    e: React.KeyboardEvent,
+    isMac: boolean,
+): string[] => {
+    const keys: string[] = [];
+
+    // 1. 检测并添加修饰键 (依顺序添加，保证一致性)
+    if (e.ctrlKey) keys.push("Ctrl");
+    if (e.altKey) keys.push(isMac ? "Opt" : "Alt");
+    if (e.shiftKey) keys.push("Shift");
+    if (e.metaKey) keys.push(isMac ? "Cmd" : "Win");
+
+    // 2. 识别主按键
+    const isModifierOnly =
         e.key === "Control" ||
-        e.key === "Meta" ||
+        e.key === "Shift" ||
         e.key === "Alt" ||
-        e.key === "Shift"
-            ? null
-            : e.key.length === 1
-              ? e.key.toUpperCase()
-              : e.key;
+        e.key === "Meta";
 
-    if (key) parts.push(key);
-    return parts;
-}
+    if (!isModifierOnly) {
+        // 使用 e.code 转换，若转换不出则降级使用 e.key
+        const primaryKey = codeToKey(e.code, e.key);
+
+        // 避免因判定不一致导致将修饰键再次加入
+        const isAlreadyAdded = keys.includes(primaryKey);
+        if (primaryKey && !isAlreadyAdded) {
+            keys.push(primaryKey);
+        }
+    }
+
+    return keys;
+};
 
 /** 检测快捷键冲突，返回存在冲突的 id 集合 */
 export function getConflictIds(

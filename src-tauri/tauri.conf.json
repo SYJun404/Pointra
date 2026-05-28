@@ -12,13 +12,17 @@
     "app": {
         "windows": [
             {
-                "label": "background",
-                "title": "background",
-                "url": "src/background/index.html",
-                "width": 4,
-                "height": 12,
+                "title": "Pointra",
+                "label": "main",
+                "url": "src/main/index.html",
+                "width": 300,
+                "height": 420,
                 "visible": false,
-                "decorations": false
+                "resizable": false,
+                "decorations": false,
+                "transparent": true,
+                "shadow": true,
+                "skipTaskbar": true
             }
         ],
         "security": {

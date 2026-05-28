@@ -1,9 +1,9 @@
+use crate::utils::shortcuts::{restart_shortcuts, stop_shortcuts};
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder,
+    AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
-#[allow(unused_imports)]
 
 pub fn create_setting_win<R: Runtime>(app: &AppHandle<R>) {
     let window_builder = WebviewWindowBuilder::new(
@@ -25,12 +25,25 @@ pub fn create_setting_win<R: Runtime>(app: &AppHandle<R>) {
         Ok(window) => {
             let _ = window.show();
             let _ = window.set_focus();
+
+            let app_handle = app.clone();
+
+            window.on_window_event(move |event| match event {
+                WindowEvent::Focused(true) => {
+                    stop_shortcuts(&app_handle);
+                }
+                WindowEvent::Destroyed => {
+                    restart_shortcuts(&app_handle);
+                }
+                _ => {}
+            });
         }
         Err(e) => {
             println!("Failed to build main window: {}", e);
         }
     }
 }
+
 /// 初始化系统托盘
 pub fn init<R: Runtime>(app: &tauri::App<R>) -> Result<(), tauri::Error> {
     let handle = app.handle();

@@ -29,34 +29,32 @@ tauri_panel! {
 }
 
 #[tauri::command]
-pub fn apply_window_effects(window: tauri::Window) {
+pub fn apply_window_effects(web_window: tauri::WebviewWindow) {
     #[cfg(target_os = "macos")]
     {
         // apply_vibrancy(&window, NSVisualEffectMaterial::HudWindow, None, None)
         //     .expect("Unsupported platform! 'apply_vibrancy' is only supported on macOS");
 
-        if let Some(web_window) = window.get_webview_window("main") {
-            // 打开调试工具
-            // web_window.open_devtools();
+        // 打开调试工具
+        // web_window.open_devtools();
 
-            let panel = web_window.to_panel::<BasicPanel>().unwrap();
+        let panel = web_window.to_panel::<BasicPanel>().unwrap();
 
-            // Set the window to float level
-            panel.set_level(PanelLevel::Floating.value());
+        // Set the window to float level
+        panel.set_level(PanelLevel::Floating.value());
 
-            // Ensures the panel cannot activate the app
-            panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
+        // Ensures the panel cannot activate the app
+        panel.set_style_mask(StyleMask::empty().nonactivating_panel().into());
 
-            // Allows the panel to:
-            // - display on the same space as the full screen window
-            // - join all spaces
-            panel.set_collection_behavior(
-                CollectionBehavior::new()
-                    .full_screen_auxiliary()
-                    .can_join_all_spaces()
-                    .into(),
-            );
-        }
+        // Allows the panel to:
+        // - display on the same space as the full screen window
+        // - join all spaces
+        panel.set_collection_behavior(
+            CollectionBehavior::new()
+                .full_screen_auxiliary()
+                .can_join_all_spaces()
+                .into(),
+        );
     }
 
     // #[cfg(target_os = "windows")]

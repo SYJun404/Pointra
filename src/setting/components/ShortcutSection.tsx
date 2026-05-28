@@ -13,7 +13,6 @@ interface ShortcutSectionProps {
     onCancelRecording: UseShortcutManagerReturn["cancelRecording"];
     onKeyDown: UseShortcutManagerReturn["handleKeyDown"];
     onResetOne: UseShortcutManagerReturn["resetToDefault"];
-    onResetAll: UseShortcutManagerReturn["resetAllShortcuts"];
 }
 
 export function ShortcutSection({
@@ -25,7 +24,6 @@ export function ShortcutSection({
     onCancelRecording,
     onKeyDown,
     onResetOne,
-    onResetAll,
 }: ShortcutSectionProps) {
     useEffect(() => {
         if (!recordingId) return;

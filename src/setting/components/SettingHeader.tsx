@@ -1,22 +1,5 @@
-import { CircleInfo, Gear, CircleXmarkFill } from "@gravity-ui/icons";
-import type { UseShortcutManagerReturn } from "../hooks";
+import { Gear, CircleXmarkFill } from "@gravity-ui/icons";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-
-export function SettingToast({
-    toastMsg,
-}: {
-    toastMsg: UseShortcutManagerReturn["toastMsg"];
-}) {
-    if (!toastMsg) return null;
-    return (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white text-sm shadow-lg border border-gray-700">
-                <CircleInfo width={14} height={14} color="#fff" />
-                <span>{toastMsg}</span>
-            </div>
-        </div>
-    );
-}
 
 export function SettingHeader() {
     const closeApp = () => {

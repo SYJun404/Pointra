@@ -7,15 +7,17 @@ use commands::window::{apply_window_effects, update_hover_status};
 use reqwest::Client;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
+use tauri::Manager;
 use tauri_plugin_global_shortcut::ShortcutState;
 use utils::ocr_mac::OcrState;
-use utils::shortcuts::{handle_shortcut_event, init_ctrl_listener, init_shortcuts};
+use utils::shortcuts::{handle_shortcut_event, init_point_listener, init_shortcuts, Point};
 use utils::tray;
 
 pub struct AppState {
     ocr_state: Arc<OcrState>,
     client: Client,
     window_locked: Arc<AtomicBool>,
+    point_key: Arc<Point>,
     audio_state: AudioState,
 }
 
@@ -25,11 +27,11 @@ pub fn run() {
             ocr_state: OcrState::new(),
             client: Client::new(),
             window_locked: Arc::new(AtomicBool::new(false)),
+            point_key: Arc::new(Point::new()),
             audio_state: AudioState::new(0.5),
         })
         // 注册命令
         .invoke_handler(tauri::generate_handler![
-            apply_window_effects,
             update_hover_status,
             fetch_trans_res,
             play_phonetic_url,
@@ -38,18 +40,22 @@ pub fn run() {
         ])
         .setup(|app| {
             tray::init(app)?;
+
             #[cfg(target_os = "macos")]
             {
                 app.set_activation_policy(tauri::ActivationPolicy::Accessory);
             }
+            apply_window_effects(app.get_webview_window("main").unwrap());
+
             let handle = app.handle().clone();
-            init_ctrl_listener(handle);
+            init_point_listener(handle);
             init_shortcuts(app.handle());
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_nspanel::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_os::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(|app, shortcut, event| {
