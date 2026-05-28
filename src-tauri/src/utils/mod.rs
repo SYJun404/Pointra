@@ -1,4 +1,5 @@
 pub mod capture;
+pub mod define_config;
 pub mod get_text;
 pub mod ocr_mac;
 pub mod shortcuts;

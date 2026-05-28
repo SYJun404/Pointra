@@ -24,7 +24,7 @@ function SettingPage() {
     } = useShortcutManager();
 
     return (
-        <div className="h-screen rounded-4xl pb-3 flex flex-col bg-white overflow-hidden select-none">
+        <div className="h-screen rounded-4xl flex flex-col bg-white overflow-hidden select-none">
             <SettingToast toastMsg={toastMsg} />
             <SettingHeader />
 
@@ -52,7 +52,7 @@ function SettingPage() {
 
             {/* ============ 底部安全区 ============ */}
             {hasChanges && (
-                <div className="shrink-0 p-3 pb-0 border-t border-borderSubW bg-subBgW">
+                <div className="shrink-0 p-3 border-t border-borderSubW bg-subBgW">
                     <button
                         onClick={handleSave}
                         className="w-full h-10 rounded-full bg-mainBlueW text-white text-sm font-medium cursor-pointer

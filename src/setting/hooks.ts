@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { ShortcutItem, GeneralSetting } from "./types";
-import { GENERAL_SETTINGS as DEFAULT_GENERAL, SHORTCUT_LIST } from "./data";
-import { eventToKeys, getConflictIds } from "./utils";
+import { eventToKeys, getConflictIds, normalizeKeys } from "./utils";
+import { ConfigManager } from "./ConfigManager.ts";
 
 export interface UseShortcutManagerReturn {
     shortcuts: ShortcutItem[];
@@ -22,9 +22,10 @@ export interface UseShortcutManagerReturn {
 }
 
 export function useShortcutManager(): UseShortcutManagerReturn {
-    const [shortcuts, setShortcuts] = useState<ShortcutItem[]>(SHORTCUT_LIST);
-    const [generalSettings, setGeneralSettings] =
-        useState<GeneralSetting[]>(DEFAULT_GENERAL);
+    const [shortcuts, setShortcuts] = useState<ShortcutItem[]>([]);
+    const [generalSettings, setGeneralSettings] = useState<GeneralSetting[]>(
+        [],
+    );
     const [recordingId, setRecordingId] = useState<string | null>(null);
     const [toastMsg, setToastMsg] = useState<string | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
@@ -57,40 +58,63 @@ export function useShortcutManager(): UseShortcutManagerReturn {
         e.preventDefault();
         e.stopPropagation();
 
-        const hasModifier = e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
-        const isFunctionKey = e.key.startsWith("F") && e.key.length <= 3;
-        const isTab = e.key === "Tab";
+        // 防止长按重复触发
+        if (e.repeat) return;
 
-        if (!hasModifier && !isFunctionKey && !isTab) {
-            showToast(
-                "请至少包含一个修饰键（Ctrl / ⌘ / Alt / Shift）或使用功能键",
-            );
+        const isModifierOnly =
+            e.key === "Control" ||
+            e.key === "Shift" ||
+            e.key === "Alt" ||
+            e.key === "Meta";
+
+        // 只按修饰键不记录
+        if (isModifierOnly) return;
+
+        const keys = eventToKeys(e); // 建议内部用 e.code + modifier
+
+        if (!keys || keys.length === 0) return;
+
+        const hasModifier = e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
+
+        const isFunctionKey =
+            e.code.startsWith("F") && /^F\d{1,2}$/.test(e.code);
+
+        const isAllowedSingle =
+            isFunctionKey || e.code === "Tab" || e.code === "Escape";
+
+        // 限制规则：普通键必须带修饰键
+        if (!hasModifier && !isAllowedSingle) {
+            showToast("请至少包含 Ctrl / ⌘ / Alt / Shift 或使用功能键");
             return;
         }
 
-        const newKeys = eventToKeys(e);
-        if (newKeys.length === 0) return;
+        // 标准化 key（避免顺序问题）
+        const normalized = normalizeKeys(keys);
 
-        const conflict = shortcuts.find(
-            (s) =>
-                s.id !== id &&
-                s.keys.length === newKeys.length &&
-                s.keys.every((k, i) => k === newKeys[i]),
-        );
+        const conflict = shortcuts.find((s) => {
+            if (s.id === id) return false;
+
+            const a = normalizeKeys(s.keys);
+
+            return (
+                a.length === normalized.length &&
+                a.every((k) => normalized.includes(k))
+            );
+        });
 
         setShortcuts((prev) =>
-            prev.map((s) => (s.id === id ? { ...s, keys: newKeys } : s)),
+            prev.map((s) => (s.id === id ? { ...s, keys: normalized } : s)),
         );
+
         setRecordingId(null);
         setHasChanges(true);
 
         if (conflict) {
-            showToast(`⚠️ 该快捷键与「${conflict.label}」冲突`);
+            showToast(`该快捷键与「${conflict.label}」冲突`);
         } else {
-            showToast("✅ 快捷键已更新");
+            showToast("快捷键已更新");
         }
     };
-
     const resetToDefault = (id: string) => {
         setShortcuts((prev) =>
             prev.map((s) =>
@@ -133,6 +157,16 @@ export function useShortcutManager(): UseShortcutManagerReturn {
             document.removeEventListener("click", handler);
         };
     }, [recordingId]);
+
+    // 初始化加载配置
+    useEffect(() => {
+        ConfigManager.getAllSettings()
+            .then(({ general, shortcuts }) => {
+                setGeneralSettings(general);
+                setShortcuts(shortcuts);
+            })
+            .catch((err) => console.error("加载配置失败:", err));
+    }, []);
 
     const conflictIds = getConflictIds(shortcuts);
 

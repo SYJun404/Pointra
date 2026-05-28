@@ -52,7 +52,7 @@ export function GeneralSection({
                                 <div
                                     className={`w-3.5 h-3.5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
                                         item.enabled
-                                            ? "translate-x-[19px]"
+                                            ? "translate-x-4.75"
                                             : "translate-x-1"
                                     }`}
                                     style={{ marginTop: "3px" }}

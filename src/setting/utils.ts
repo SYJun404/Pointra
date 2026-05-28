@@ -2,7 +2,7 @@
 export function eventToKeys(e: React.KeyboardEvent): string[] {
     const parts: string[] = [];
     if (e.ctrlKey) parts.push("Ctrl");
-    if (e.metaKey) parts.push("⌘");
+    if (e.metaKey) parts.push("Cmd");
     if (e.altKey) parts.push("Alt");
     if (e.shiftKey) parts.push("Shift");
 
@@ -36,4 +36,13 @@ export function getConflictIds(
         if (ids.length > 1) ids.forEach((id) => conflictSet.add(id));
     }
     return conflictSet;
+}
+/**防止 "Ctrl + A" vs "A + Ctrl" 这种问题 */
+export function normalizeKeys(keys: string[]) {
+    const modifiers = ["Ctrl", "Cmd", "Alt", "Shift"];
+
+    const mods = keys.filter((k) => modifiers.includes(k));
+    const others = keys.filter((k) => !modifiers.includes(k));
+
+    return [...mods.sort(), ...others.sort()];
 }

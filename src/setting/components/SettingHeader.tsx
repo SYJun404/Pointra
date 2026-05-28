@@ -1,4 +1,4 @@
-import { CircleInfo, Gear, Xmark } from "@gravity-ui/icons";
+import { CircleInfo, Gear, CircleXmarkFill } from "@gravity-ui/icons";
 import type { UseShortcutManagerReturn } from "../hooks";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 
@@ -38,9 +38,9 @@ export function SettingHeader() {
 
                 <div
                     onClick={closeApp}
-                    className="flex items-center justify-center w-7 h-7 rounded-lg border bg-red-50 border-red-200    cursor-pointer transition-transform active:scale-90"
+                    className="flex items-center justify-center  cursor-pointer"
                 >
-                    <Xmark width={14} height={14} color="#fa2c37" />
+                    <CircleXmarkFill width={20} height={20} color="#bbbbbb" />
                 </div>
             </div>
         </>

@@ -2,6 +2,7 @@ import { Xmark, ArrowRightArrowLeft } from "@gravity-ui/icons";
 import type { ShortcutItem } from "../types";
 import { ShortcutKeys } from "./KeyTag";
 import type { UseShortcutManagerReturn } from "../hooks";
+import { useEffect } from "react";
 
 interface ShortcutSectionProps {
     shortcuts: ShortcutItem[];
@@ -26,6 +27,20 @@ export function ShortcutSection({
     onResetOne,
     onResetAll,
 }: ShortcutSectionProps) {
+    useEffect(() => {
+        if (!recordingId) return;
+
+        const handler = (e: KeyboardEvent) => {
+            onKeyDown(e as any, recordingId);
+        };
+
+        window.addEventListener("keydown", handler);
+
+        return () => {
+            window.removeEventListener("keydown", handler);
+        };
+    }, [recordingId]);
+
     const isModified = (item: ShortcutItem) =>
         item.keys.join("+") !== item.defaultKeys.join("+");
 
@@ -35,7 +50,7 @@ export function ShortcutSection({
                 <div className="flex items-center gap-2">
                     <div className="w-1 h-4 rounded-full bg-mainBlueW" />
                     <h2 className="text-sm font-medium text-mainTitleW">
-                        快捷键
+                        快捷按键
                     </h2>
                 </div>
                 <p className="text-[11px] text-tagSecondW mt-px rounded-md ">
@@ -56,7 +71,7 @@ export function ShortcutSection({
                                 isRec ? "bg-blueBgW" : "hover:bg-subBgW"
                             }`}
                         >
-                            <div className="flex items-center justify-between px-4 py-3 min-h-[52px]">
+                            <div className="flex items-center justify-between px-4 py-3 min-h-13">
                                 {/* 左侧 */}
                                 <div className="flex-1 min-w-0 mr-3">
                                     <div className="flex items-center gap-2">
@@ -83,9 +98,6 @@ export function ShortcutSection({
                                         <div
                                             ref={recordingRef}
                                             className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-mainBlueW bg-blueBgW"
-                                            onKeyDown={(e) =>
-                                                onKeyDown(e, item.id)
-                                            }
                                             tabIndex={0}
                                             autoFocus
                                         >

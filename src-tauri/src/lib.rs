@@ -1,6 +1,7 @@
 mod commands;
 mod utils;
 use commands::audio::{play_phonetic_url, AudioState};
+use commands::config::{get_config, update_config};
 use commands::translate::fetch_trans_res;
 use commands::window::{apply_window_effects, update_hover_status};
 use reqwest::Client;
@@ -31,7 +32,9 @@ pub fn run() {
             apply_window_effects,
             update_hover_status,
             fetch_trans_res,
-            play_phonetic_url
+            play_phonetic_url,
+            get_config,
+            update_config,
         ])
         .setup(|app| {
             tray::init(app)?;
