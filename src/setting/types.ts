@@ -4,6 +4,10 @@ export interface ShortcutItem {
     label: string;
     keys: string[];
     defaultKeys: string[];
+    save: {
+        id: string;
+        index: number;
+    }[];
 }
 
 /** 通用设置项 */

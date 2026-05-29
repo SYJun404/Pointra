@@ -6,30 +6,24 @@ use commands::translate::fetch_trans_res;
 use commands::window::{apply_window_effects, update_hover_status};
 use reqwest::Client;
 use std::sync::atomic::AtomicBool;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use tauri::Manager;
 use tauri_plugin_global_shortcut::ShortcutState;
+use utils::define_config::{get_config_from_store, AppConfig};
 use utils::ocr_mac::OcrState;
-use utils::shortcuts::{handle_shortcut_event, init_point_listener, init_shortcuts, Point};
+use utils::shortcuts::{handle_shortcut_event, init_point_listener, init_shortcuts};
 use utils::tray;
 
 pub struct AppState {
     ocr_state: Arc<OcrState>,
     client: Client,
     window_locked: Arc<AtomicBool>,
-    point_key: Arc<Point>,
     audio_state: AudioState,
+    config: Mutex<AppConfig>,
 }
 
 pub fn run() {
     tauri::Builder::default()
-        .manage(AppState {
-            ocr_state: OcrState::new(),
-            client: Client::new(),
-            window_locked: Arc::new(AtomicBool::new(false)),
-            point_key: Arc::new(Point::new()),
-            audio_state: AudioState::new(0.5),
-        })
         // 注册命令
         .invoke_handler(tauri::generate_handler![
             update_hover_status,
@@ -38,7 +32,18 @@ pub fn run() {
             get_config,
             update_config,
         ])
+        // 初始化应用状态
         .setup(|app| {
+            // 初始化AppState
+            let config = get_config_from_store(app.handle()).unwrap_or_default();
+            app.manage(AppState {
+                ocr_state: OcrState::new(),
+                client: Client::new(),
+                window_locked: Arc::new(AtomicBool::new(false)),
+                audio_state: AudioState::new(0.5),
+                config: Mutex::new(config),
+            });
+            // 初始化托盘
             tray::init(app)?;
 
             #[cfg(target_os = "macos")]
@@ -47,8 +52,7 @@ pub fn run() {
             }
             apply_window_effects(app.get_webview_window("main").unwrap());
 
-            let handle = app.handle().clone();
-            init_point_listener(handle);
+            init_point_listener(app.handle().clone());
             init_shortcuts(app.handle());
             Ok(())
         })

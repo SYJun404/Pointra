@@ -15,91 +15,68 @@ export class ConfigManager {
     }
 
     /**
-     * 获取转换后的通用设置数组
-     */
-    static async getGeneralSettings(): Promise<GeneralSetting[]> {
-        const rustConfig = await this.fetchRawConfig();
-        return GENERAL_SETTINGS_TEMPLATE.map((meta) => ({
-            ...meta,
-            enabled: rustConfig[meta.id],
-        }));
-    }
-
-    /**
-     * 获取转换后的快捷键设置数组
-     */
-    static async getShortcutList(): Promise<ShortcutItem[]> {
-        const rustConfig = await this.fetchRawConfig();
-        return SHORTCUT_LIST_TEMPLATE.map((meta) => ({
-            ...meta,
-            keys: meta.keys.map((key) => rustConfig[key]),
-        }));
-    }
-
-    /**
      * 获取前端渲染所需的完整打包数据
      */
     static async getAllSettings() {
         // 使用 Promise.all 并行请求，如果内部独立调用了 fetchRawConfig，
         // 也可以优化为先获取一份 raw，再分别传参解析。
         const rustConfig = await this.fetchRawConfig();
+        console.log(rustConfig);
 
         const general = GENERAL_SETTINGS_TEMPLATE.map((meta) => ({
             ...meta,
             enabled: rustConfig[meta.id],
         }));
 
-        const shortcuts: ShortcutItem[] = [
-            {
-                id: "point_key",
-                label: "定点快捷键",
-                keys: [rustConfig.point_key],
-                defaultKeys: ["F3"],
-            },
-            {
-                id: "pinned_key",
-                label: "置顶快捷键",
-                keys: [rustConfig.pinned_key],
-                defaultKeys: ["F1"],
-            },
-            {
-                id: "hide_win_key",
-                label: "隐藏窗口",
-                keys: [rustConfig.hide_win_key],
-                defaultKeys: ["Tab"],
-            },
-            {
-                id: "select_text",
-                label: "划词快捷键",
-                keys: [
-                    rustConfig.select_text_modifiers,
-                    rustConfig.select_text_code,
-                ],
-                defaultKeys: ["SUPER", "Digit1"],
-            },
-            {
-                id: "search_win",
-                label: "打开搜索",
-                keys: [
-                    rustConfig.search_win_modifiers,
-                    rustConfig.search_win_code,
-                ],
-                defaultKeys: ["SUPER", "Digit2"],
-            },
-        ];
+        const shortcuts: ShortcutItem[] = SHORTCUT_LIST_TEMPLATE.map(
+            (meta) => ({
+                ...meta,
+                keys: meta.rustKeys.map((key) => rustConfig[key]),
+            }),
+        );
 
         return { general, shortcuts };
     }
 
     /**
-     * 更新单个通用设置项并同步到后端
+     * 更新所有设置项并同步到后端
      */
-    static async updateGeneralSetting(
-        id: keyof Pick<RustAppConfig, "auto_hide" | "auto_play">,
-        value: boolean,
-    ) {
-        const currentConfig = await this.fetchRawConfig();
-        currentConfig[id] = value;
-        await invoke("update_config", { newConfig: currentConfig });
+    static async updateAllSetting(
+        shortcuts: ShortcutItem[],
+        general: GeneralSetting[],
+    ): Promise<boolean> {
+        try {
+            // 将 shortcuts 和 general 转换为 RustAppConfig 格式
+            const config: RustAppConfig = {
+                auto_hide: true,
+                auto_play: false,
+                hide_win_key: "Tab",
+                pinned_key: "F1",
+                point_key: "F3",
+                search_win_code: "Digit2",
+                search_win_modifiers: "SUPER",
+                select_text_code: "Digit1",
+                select_text_modifiers: "SUPER",
+                theme: "light",
+            };
+
+            for (const setting of general) {
+                Object.assign(config, { [setting.id]: setting.enabled });
+            }
+            for (const setting of shortcuts) {
+                for (const key of setting.save) {
+                    Object.assign(config, {
+                        [key.id]: setting.keys[key.index],
+                    });
+                }
+            }
+
+            return await invoke<boolean>("update_config", {
+                newConfig: config,
+            });
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
     }
 }

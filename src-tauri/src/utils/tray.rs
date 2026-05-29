@@ -1,8 +1,8 @@
-use crate::utils::shortcuts::{restart_shortcuts, stop_shortcuts};
+use crate::utils::shortcuts::stop_shortcuts;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
-    AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder, WindowEvent,
+    AppHandle, Emitter, Manager, Runtime, WebviewUrl, WebviewWindowBuilder,
 };
 
 pub fn create_setting_win<R: Runtime>(app: &AppHandle<R>) {
@@ -27,16 +27,7 @@ pub fn create_setting_win<R: Runtime>(app: &AppHandle<R>) {
             let _ = window.set_focus();
 
             let app_handle = app.clone();
-
-            window.on_window_event(move |event| match event {
-                WindowEvent::Focused(true) => {
-                    stop_shortcuts(&app_handle);
-                }
-                WindowEvent::Destroyed => {
-                    restart_shortcuts(&app_handle);
-                }
-                _ => {}
-            });
+            stop_shortcuts(&app_handle);
         }
         Err(e) => {
             println!("Failed to build main window: {}", e);

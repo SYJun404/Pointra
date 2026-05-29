@@ -20,12 +20,13 @@ function SettingPage() {
         handleKeyDown,
         resetToDefault,
         handleSave,
+        closeApp,
     } = useShortcutManager();
 
     return (
         <div className="h-screen rounded-4xl flex flex-col bg-white overflow-hidden select-none">
             <CustomToast placement="top" />
-            <SettingHeader />
+            <SettingHeader closeApp={closeApp} />
 
             {/* ============ 滚动内容 ============ */}
             <div className="flex-1 overflow-y-auto no-scrollbar px-3 pt-3  space-y-6">

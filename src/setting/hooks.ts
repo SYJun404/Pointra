@@ -4,6 +4,7 @@ import { eventToKeys, getConflictIds, normalizeKeys } from "./utils";
 import { ConfigManager } from "./ConfigManager.ts";
 import { toast, ToastContentValue } from "@heroui/react";
 import { usePlatform } from "../hooks/usePlatform.ts";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 export interface UseShortcutManagerReturn {
     shortcuts: ShortcutItem[];
@@ -19,6 +20,7 @@ export interface UseShortcutManagerReturn {
     handleKeyDown: (e: React.KeyboardEvent, id: string) => void;
     resetToDefault: (id: string) => void;
     handleSave: () => void;
+    closeApp: () => void;
 }
 
 export function useShortcutManager(): UseShortcutManagerReturn {
@@ -28,8 +30,13 @@ export function useShortcutManager(): UseShortcutManagerReturn {
     );
     const [recordingId, setRecordingId] = useState<string | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
+    const [hasSaved, setHasSaved] = useState(false);
     const recordingRef = useRef<HTMLDivElement>(null);
     const { isMac } = usePlatform();
+    const initConfig = useRef<null | {
+        shortcuts: ShortcutItem[];
+        generalSettings: GeneralSetting[];
+    }>(null);
 
     /* ---- Toast ---- */
     const showToast = useCallback(
@@ -125,11 +132,9 @@ export function useShortcutManager(): UseShortcutManagerReturn {
 
         if (conflict) {
             showToast(`该快捷键与「${conflict.label}」冲突`, "danger");
-        } else {
-            showToast("快捷键已更新");
         }
     };
-    
+
     const resetToDefault = (id: string) => {
         setShortcuts((prev) =>
             prev.map((s) =>
@@ -140,9 +145,33 @@ export function useShortcutManager(): UseShortcutManagerReturn {
         showToast("已恢复默认");
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         setHasChanges(false);
-        showToast("设置已保存");
+        const success = await ConfigManager.updateAllSetting(
+            shortcuts,
+            generalSettings,
+        );
+
+        if (success) {
+            setHasSaved(true);
+            showToast("保存成功, 2秒后自动关闭", "success");
+            setTimeout(() => {
+                getCurrentWindow().close();
+            }, 2000);
+        } else {
+            showToast("保存失败, 已恢复初始状态", "danger", 3000);
+            if (initConfig.current) {
+                setShortcuts(initConfig.current.shortcuts);
+                setGeneralSettings(initConfig.current.generalSettings);
+            }
+        }
+    };
+
+    const closeApp = async () => {
+        if (!hasSaved) {
+            await ConfigManager.updateAllSetting(shortcuts, generalSettings);
+        }
+        getCurrentWindow().close();
     };
 
     /* 点击外部停止录制 */
@@ -171,6 +200,7 @@ export function useShortcutManager(): UseShortcutManagerReturn {
             .then(({ general, shortcuts }) => {
                 setGeneralSettings(general);
                 setShortcuts(shortcuts);
+                initConfig.current = { shortcuts, generalSettings };
             })
             .catch((err) => console.error("加载配置失败:", err));
     }, []);
@@ -191,5 +221,6 @@ export function useShortcutManager(): UseShortcutManagerReturn {
         handleKeyDown,
         resetToDefault,
         handleSave,
+        closeApp,
     };
 }

@@ -1,11 +1,6 @@
 import { Gear, CircleXmarkFill } from "@gravity-ui/icons";
-import { getCurrentWindow } from "@tauri-apps/api/window";
 
-export function SettingHeader() {
-    const closeApp = () => {
-        getCurrentWindow().close();
-    };
-
+export function SettingHeader({ closeApp }: { closeApp: () => void }) {
     return (
         <>
             <div data-tauri-drag-region className="h-3 w-full absolute" />

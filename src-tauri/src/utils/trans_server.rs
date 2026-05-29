@@ -131,7 +131,7 @@ async fn fetch_sogou_cookie(client: &reqwest::Client) -> Result<(String, String)
 async fn get_or_refresh_cookie(
     client: &reqwest::Client,
     app: &AppHandle,
-    isSecond: bool,
+    is_second: bool,
 ) -> Result<(String, String), String> {
     let store = app
         .store("cookie_store.json")
@@ -149,7 +149,7 @@ async fn get_or_refresh_cookie(
         .map(|ts| is_one_day_apart(ts, now))
         .unwrap_or(true); // 没有缓存时也刷新
 
-    if !needs_refresh && !isSecond {
+    if !needs_refresh && !is_second {
         let cookie = store
             .get("cookie")
             .and_then(|v| v.as_str().map(str::to_string));

@@ -1,4 +1,4 @@
-import { RustAppConfig } from "./types";
+import { RustAppConfig, ShortcutItem } from "./types";
 
 type Keys = keyof Pick<
     RustAppConfig,
@@ -31,38 +31,80 @@ export const GENERAL_SETTINGS_TEMPLATE: {
 export const SHORTCUT_LIST_TEMPLATE: {
     id: string;
     label: string;
-    keys: Keys[];
+    rustKeys: Keys[];
     defaultKeys: string[];
+    save: {
+        id: string;
+        index: number;
+    }[];
 }[] = [
     {
         id: "point_key",
         label: "点位快捷键 (示例)",
-        keys: ["point_key"],
+        rustKeys: ["point_key"],
         defaultKeys: ["F3"],
+        save: [
+            {
+                id: "point_key",
+                index: 0,
+            },
+        ],
     },
     {
         id: "pinned_key",
         label: "置顶快捷键",
-        keys: ["pinned_key"],
+        rustKeys: ["pinned_key"],
         defaultKeys: ["F1"],
+        save: [
+            {
+                id: "pinned_key",
+                index: 0,
+            },
+        ],
     },
     {
         id: "hide_win_key",
         label: "隐藏窗口快捷键",
-        keys: ["hide_win_key"],
+        rustKeys: ["hide_win_key"],
         defaultKeys: ["Tab"],
+        save: [
+            {
+                id: "hide_win_key",
+                index: 0,
+            },
+        ],
     },
     {
         id: "select_text",
         label: "划词快捷键",
-        keys: ["select_text_modifiers", "select_text_code"],
+        rustKeys: ["select_text_modifiers", "select_text_code"],
         defaultKeys: ["SUPER", "Digit1"],
+        save: [
+            {
+                id: "select_text_modifiers",
+                index: 0,
+            },
+            {
+                id: "select_text_code",
+                index: 1,
+            },
+        ],
     },
     {
         id: "search_win",
         label: "打开搜索",
-        keys: ["search_win_modifiers", "search_win_code"],
+        rustKeys: ["search_win_modifiers", "search_win_code"],
         defaultKeys: ["SUPER", "Digit2"],
+        save: [
+            {
+                id: "search_win_modifiers",
+                index: 0,
+            },
+            {
+                id: "search_win_code",
+                index: 1,
+            },
+        ],
     },
 ];
 
