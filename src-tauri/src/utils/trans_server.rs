@@ -131,6 +131,7 @@ async fn fetch_sogou_cookie(client: &reqwest::Client) -> Result<(String, String)
 async fn get_or_refresh_cookie(
     client: &reqwest::Client,
     app: &AppHandle,
+    isSecond: bool,
 ) -> Result<(String, String), String> {
     let store = app
         .store("cookie_store.json")
@@ -148,7 +149,7 @@ async fn get_or_refresh_cookie(
         .map(|ts| is_one_day_apart(ts, now))
         .unwrap_or(true); // 没有缓存时也刷新
 
-    if !needs_refresh {
+    if !needs_refresh && !isSecond {
         let cookie = store
             .get("cookie")
             .and_then(|v| v.as_str().map(str::to_string));
@@ -206,6 +207,24 @@ fn build_headers(cookie: &str) -> HeaderMap {
     headers
 }
 
+async fn post_and_parse(
+    client: &reqwest::Client,
+    url: &str,
+    cookie: &str,
+    params: &TranslationParams,
+) -> Result<SogouRawResponse, String> {
+    client
+        .post(url)
+        .headers(build_headers(cookie))
+        .json(params)
+        .send()
+        .await
+        .map_err(|e| format!("Network error: {}", e))?
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse JSON: {}", e))
+}
+
 pub async fn fetch_translation(
     word: &str,
     state: &AppState,
@@ -214,7 +233,7 @@ pub async fn fetch_translation(
     let url = "https://fanyi.sogou.com/api/transpc/text/result";
     let (token, is_english) = generate_s_token(word);
 
-    let (cookie, uuid) = get_or_refresh_cookie(&state.client, app).await?;
+    let (cookie, uuid) = get_or_refresh_cookie(&state.client, app, false).await?;
 
     let params = TranslationParams {
         from: if is_english { "en" } else { "zh-CHS" }.to_string(),
@@ -228,17 +247,19 @@ pub async fn fetch_translation(
         exchange: false,
     };
 
-    let raw_res: SogouRawResponse = state
-        .client
-        .post(url)
-        .headers(build_headers(&cookie))
-        .json(&params)
-        .send()
-        .await
-        .map_err(|e| format!("Network error: {}", e))?
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse JSON: {}", e))?;
+    // 首次请求
+    let raw_res = post_and_parse(&state.client, url, &cookie, &params).await;
+
+    // 出错时尝试重新获取 cookie 并重试一次
+    let raw_res = match raw_res {
+        Ok(resp) => resp,
+        Err(_) => {
+            let (new_cookie, new_uuid) = get_or_refresh_cookie(&state.client, app, true).await?;
+            let mut new_params = params;
+            new_params.uuid = new_uuid;
+            post_and_parse(&state.client, url, &new_cookie, &new_params).await?
+        }
+    };
 
     let data = raw_res.data.ok_or("API returned empty data")?;
 
