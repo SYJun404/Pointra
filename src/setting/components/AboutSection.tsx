@@ -14,7 +14,7 @@ export function AboutSection() {
                     About
                 </p>
             </div>
-            <div className="rounded-xl border border-borderMainW bg-white overflow-hidden px-4 py-3.5">
+            <div className="rounded-xl border border-borderMainW bg-white overflow-hidden p-3">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center justify-center w-9 h-9 rounded-lg bg-mainBlueW">
                         <img
@@ -33,7 +33,7 @@ export function AboutSection() {
                     </div>
                 </div>
             </div>
-            <p className="text-xs my-3 text-center text-tagSecondW">
+            <p className="text-[11px] my-3 text-center text-tagSecondW">
                 Developed By SYJun
             </p>
         </section>

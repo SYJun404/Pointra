@@ -3,6 +3,7 @@ import type { ShortcutItem } from "../types";
 import { ShortcutKeys } from "./KeyTag";
 import type { UseShortcutManagerReturn } from "../hooks";
 import { useEffect } from "react";
+import { usePlatform } from "../../hooks/usePlatform";
 
 interface ShortcutSectionProps {
     shortcuts: ShortcutItem[];
@@ -25,6 +26,7 @@ export function ShortcutSection({
     onKeyDown,
     onResetOne,
 }: ShortcutSectionProps) {
+    const { isMac } = usePlatform();
     useEffect(() => {
         if (!recordingId) return;
 
@@ -41,6 +43,15 @@ export function ShortcutSection({
 
     const isModified = (item: ShortcutItem) =>
         item.keys.join("+") !== item.defaultKeys.join("+");
+
+    const showTips = (id: string) => {
+        const altOrOpt = isMac ? "Opt" : "Alt";
+        const oneKeyListId = ["point_key", "pinned_key", "hide_win_key"];
+        if (oneKeyListId.includes(id)) {
+            return `支持按键：Esc / Tab / F1~F12`;
+        }
+        return `同时按下 Cmd / ${altOrOpt} / Ctrl / Shift +任意键`;
+    };
 
     return (
         <section>
@@ -69,7 +80,7 @@ export function ShortcutSection({
                                 isRec ? "bg-blueBgW" : "hover:bg-subBgW"
                             }`}
                         >
-                            <div className="flex items-center justify-between px-4 py-3 min-h-13">
+                            <div className="flex items-center justify-between p-3 min-h-13">
                                 {/* 左侧 */}
                                 <div className="flex-1 min-w-0 mr-3">
                                     <div className="flex items-center gap-2">
@@ -79,11 +90,6 @@ export function ShortcutSection({
                                         {hasConflict && (
                                             <span className="text-[10px] text-red-500 bg-red-50 border border-red-200 px-1.5 py-0.5 rounded">
                                                 冲突
-                                            </span>
-                                        )}
-                                        {changed && !hasConflict && (
-                                            <span className="text-[10px] text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded">
-                                                已修改
                                             </span>
                                         )}
                                     </div>
@@ -123,7 +129,7 @@ export function ShortcutSection({
                                                     }
                                                     className="flex items-center justify-center w-6 h-6 rounded-md border border-borderMainW
                                                                bg-white text-tagSecondW hover:bg-blueBgW hover:text-mainBlueW hover:border-blueBorderW
-                                                               transition-all active:scale-90"
+                                                               transition-all active:scale-90 cursor-pointer"
                                                     title="修改快捷键"
                                                 >
                                                     <Xmark
@@ -138,7 +144,7 @@ export function ShortcutSection({
                                                         }
                                                         className="flex items-center justify-center w-6 h-6 rounded-md border border-borderMainW
                                                                    bg-white text-tagSecondW hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200
-                                                                   transition-all active:scale-90"
+                                                                   transition-all active:scale-90 cursor-pointer"
                                                         title="恢复默认"
                                                     >
                                                         <ArrowRightArrowLeft
@@ -156,8 +162,7 @@ export function ShortcutSection({
                             {isRec && (
                                 <div className="px-4 pb-2.5">
                                     <p className="text-[10px] text-mainBlueW/70">
-                                        同时按下 Ctrl / ⌘ / Alt / Shift +
-                                        任意键，或使用功能键（F1~F12）
+                                        {showTips(item.id)}
                                     </p>
                                 </div>
                             )}
@@ -165,22 +170,6 @@ export function ShortcutSection({
                     );
                 })}
             </div>
-
-            <p className="text-[10px] text-tagSecondW mt-2 text-center">
-                点击快捷键右侧
-                <Xmark
-                    width={10}
-                    height={10}
-                    className="inline mx-0.5 align-text-bottom"
-                />
-                按钮进行修改，点击
-                <ArrowRightArrowLeft
-                    width={10}
-                    height={10}
-                    className="inline mx-0.5 align-text-bottom"
-                />
-                恢复默认
-            </p>
         </section>
     );
 }

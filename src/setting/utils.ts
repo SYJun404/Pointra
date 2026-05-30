@@ -1,3 +1,5 @@
+import { MODIFIER_MAP_RUST } from "./settingsMeta";
+
 /** 将 KeyboardEvent 转成规范 keys 数组 */
 const codeToKey = (code: string, fallbackKey: string): string => {
     // 1. 处理字母键 (KeyA - KeyZ -> A - Z)
@@ -81,10 +83,19 @@ export const eventToKeys = (
 export function getConflictIds(
     shortcuts: { id: string; keys: string[] }[],
 ): Set<string> {
+    console.log(shortcuts);
     const map = new Map<string, string[]>();
     for (const s of shortcuts) {
         if (s.keys.length === 0) continue;
-        const key = s.keys.join("+");
+
+        let key = "";
+        for (const item of s.keys) {
+            if (key === "") {
+                key = MODIFIER_MAP_RUST[item] ?? item; // 第一个元素直接赋值
+            } else {
+                key += "+" + (MODIFIER_MAP_RUST[item] ?? item); // 后续元素加 "+" 拼接
+            }
+        }
         if (!map.has(key)) map.set(key, []);
         map.get(key)!.push(s.id);
     }
@@ -96,7 +107,7 @@ export function getConflictIds(
 }
 /**防止 "Ctrl + A" vs "A + Ctrl" 这种问题 */
 export function normalizeKeys(keys: string[]) {
-    const modifiers = ["Ctrl", "Cmd", "Alt", "Shift"];
+    const modifiers = ["Ctrl", "Cmd", "Alt", "Opt", "Shift"];
 
     const mods = keys.filter((k) => modifiers.includes(k));
     const others = keys.filter((k) => !modifiers.includes(k));

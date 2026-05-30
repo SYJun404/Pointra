@@ -3,7 +3,7 @@ mod utils;
 use commands::audio::{play_phonetic_url, AudioState};
 use commands::config::{get_config, update_config};
 use commands::translate::fetch_trans_res;
-use commands::window::{apply_window_effects, update_hover_status};
+use commands::window::{apply_window_effects, stop_shortcuts, update_hover_status};
 use reqwest::Client;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
@@ -31,6 +31,7 @@ pub fn run() {
             play_phonetic_url,
             get_config,
             update_config,
+            stop_shortcuts,
         ])
         // 初始化应用状态
         .setup(|app| {

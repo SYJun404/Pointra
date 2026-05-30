@@ -1,4 +1,4 @@
-import { RustAppConfig, ShortcutItem } from "./types";
+import { RustAppConfig } from "./types";
 
 type Keys = keyof Pick<
     RustAppConfig,
@@ -40,7 +40,7 @@ export const SHORTCUT_LIST_TEMPLATE: {
 }[] = [
     {
         id: "point_key",
-        label: "点位快捷键 (示例)",
+        label: "光标翻译",
         rustKeys: ["point_key"],
         defaultKeys: ["F3"],
         save: [
@@ -52,7 +52,7 @@ export const SHORTCUT_LIST_TEMPLATE: {
     },
     {
         id: "pinned_key",
-        label: "置顶快捷键",
+        label: "窗口置顶",
         rustKeys: ["pinned_key"],
         defaultKeys: ["F1"],
         save: [
@@ -64,7 +64,7 @@ export const SHORTCUT_LIST_TEMPLATE: {
     },
     {
         id: "hide_win_key",
-        label: "隐藏窗口快捷键",
+        label: "隐藏窗口",
         rustKeys: ["hide_win_key"],
         defaultKeys: ["Tab"],
         save: [
@@ -76,7 +76,7 @@ export const SHORTCUT_LIST_TEMPLATE: {
     },
     {
         id: "select_text",
-        label: "划词快捷键",
+        label: "选词翻译",
         rustKeys: ["select_text_modifiers", "select_text_code"],
         defaultKeys: ["SUPER", "Digit1"],
         save: [
@@ -92,7 +92,7 @@ export const SHORTCUT_LIST_TEMPLATE: {
     },
     {
         id: "search_win",
-        label: "打开搜索",
+        label: "唤醒搜索",
         rustKeys: ["search_win_modifiers", "search_win_code"],
         defaultKeys: ["SUPER", "Digit2"],
         save: [
@@ -109,10 +109,10 @@ export const SHORTCUT_LIST_TEMPLATE: {
 ];
 
 export const MODIFIER_MAP: Record<string, string> = {
-    Control: "Ctrl",
+    CONTROL: "Ctrl",
     SUPER: "Cmd",
-    Alt: "Alt",
-    Shift: "Shift",
+    ALT: "Alt",
+    SHIFT: "Shift",
     Digit1: "1",
     Digit2: "2",
     Digit3: "3",
@@ -123,4 +123,55 @@ export const MODIFIER_MAP: Record<string, string> = {
     Digit8: "8",
     Digit9: "9",
     Digit0: "0",
+    KeyA: "A",
+    KeyB: "B",
+    KeyC: "C",
+    KeyD: "D",
+    KeyE: "E",
+    KeyF: "F",
+    KeyG: "G",
+    KeyH: "H",
+    KeyI: "I",
+    KeyJ: "J",
+    KeyK: "K",
+    KeyL: "L",
+    KeyM: "M",
+    KeyN: "N",
+    KeyO: "O",
+    KeyP: "P",
+    KeyQ: "Q",
+    KeyR: "R",
+    KeyS: "S",
+    KeyT: "T",
+    KeyU: "U",
+    KeyV: "V",
+    KeyW: "W",
+    KeyX: "X",
+    KeyY: "Y",
+    KeyZ: "Z",
+    Escape: "Esc",
+    Backspace: "Backspace",
+    Delete: "Delete",
+    ArrowUp: "Up",
+    ArrowDown: "Down",
+    ArrowLeft: "Left",
+    ArrowRight: "Right",
+    Minus: "-",
+    Equal: "=",
+    BracketLeft: "[",
+    BracketRight: "]",
+    Semicolon: ";",
+    Quote: "'",
+    Backquote: "`",
+    Comma: ",",
+    Period: ".",
+    Slash: "/",
+    Backslash: "\\",
+};
+
+export const MODIFIER_MAP_RUST: Record<string, string> = {
+    ...Object.fromEntries(
+        Object.entries(MODIFIER_MAP).map(([key, value]) => [value, key]),
+    ),
+    Opt: "ALT",
 };

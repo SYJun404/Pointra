@@ -1,9 +1,10 @@
 use crate::AppState;
 use std::sync::atomic::Ordering;
-use tauri::{Manager, State};
+use tauri::{AppHandle, Manager, State};
 use tauri_nspanel::{
     tauri_panel, CollectionBehavior, PanelLevel, StyleMask, TrackingAreaOptions, WebviewWindowExt,
 };
+use tauri_plugin_global_shortcut::GlobalShortcutExt;
 
 #[allow(unused_imports)]
 use window_vibrancy::{apply_blur, apply_vibrancy, NSVisualEffectMaterial};
@@ -68,4 +69,10 @@ pub fn apply_window_effects(web_window: tauri::WebviewWindow) {
 #[tauri::command]
 pub fn update_hover_status(hovered: bool, state: State<'_, AppState>) {
     state.window_locked.store(hovered, Ordering::Relaxed);
+}
+
+// 停止快捷键
+#[tauri::command]
+pub fn stop_shortcuts(app: AppHandle) {
+    let _ = app.global_shortcut().unregister_all();
 }

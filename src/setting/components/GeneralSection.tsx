@@ -25,7 +25,7 @@ export function GeneralSection({
                 {settings.map((item) => (
                     <div
                         key={item.id}
-                        className="flex items-center justify-between px-4 py-3.5 hover:bg-subBgW transition-colors"
+                        className="flex items-center justify-between p-3 hover:bg-subBgW transition-colors"
                     >
                         <div className="flex-1 min-w-0 mr-3">
                             <p className="text-sm text-mainTitleW">
@@ -62,10 +62,6 @@ export function GeneralSection({
                     </div>
                 ))}
             </div>
-
-            <p className="text-[10px] text-tagSecondW mt-2 text-center">
-                部分设置需要重启后生效
-            </p>
         </section>
     );
 }

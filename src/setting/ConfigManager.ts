@@ -4,6 +4,7 @@ import { RustAppConfig, GeneralSetting, ShortcutItem } from "./types";
 import {
     GENERAL_SETTINGS_TEMPLATE,
     SHORTCUT_LIST_TEMPLATE,
+    MODIFIER_MAP_RUST,
 } from "./settingsMeta.ts";
 
 export class ConfigManager {
@@ -14,12 +15,14 @@ export class ConfigManager {
         return await invoke<RustAppConfig>("get_config");
     }
 
+    static async stopShortcuts(): Promise<void> {
+        await invoke<void>("stop_shortcuts");
+    }
+
     /**
      * 获取前端渲染所需的完整打包数据
      */
     static async getAllSettings() {
-        // 使用 Promise.all 并行请求，如果内部独立调用了 fetchRawConfig，
-        // 也可以优化为先获取一份 raw，再分别传参解析。
         const rustConfig = await this.fetchRawConfig();
         console.log(rustConfig);
 
@@ -66,13 +69,15 @@ export class ConfigManager {
             for (const setting of shortcuts) {
                 for (const key of setting.save) {
                     Object.assign(config, {
-                        [key.id]: setting.keys[key.index],
+                        [key.id]:
+                            MODIFIER_MAP_RUST[setting.keys[key.index]] ??
+                            setting.keys[key.index],
                     });
                 }
             }
 
             return await invoke<boolean>("update_config", {
-                newConfig: config,
+                newConfig: config, //小了A阿斯顿笑了
             });
         } catch (error) {
             console.error(error);

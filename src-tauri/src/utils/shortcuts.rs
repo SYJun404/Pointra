@@ -84,11 +84,6 @@ pub fn handle_shortcut_event(app: &AppHandle, shortcut: &Shortcut) {
     }
 }
 
-/// 停止快捷键监听事件
-pub fn stop_shortcuts<R: Runtime>(app: &AppHandle<R>) {
-    let _ = app.global_shortcut().unregister_all();
-}
-
 /// 重启两类快捷键
 pub fn restart_shortcuts<R: Runtime>(app: &AppHandle<R>, new_config: AppConfig) {
     {

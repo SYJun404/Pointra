@@ -1,4 +1,3 @@
-use crate::utils::shortcuts::stop_shortcuts;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
@@ -25,9 +24,6 @@ pub fn create_setting_win<R: Runtime>(app: &AppHandle<R>) {
         Ok(window) => {
             let _ = window.show();
             let _ = window.set_focus();
-
-            let app_handle = app.clone();
-            stop_shortcuts(&app_handle);
         }
         Err(e) => {
             println!("Failed to build main window: {}", e);

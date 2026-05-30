@@ -30,13 +30,13 @@ export function useShortcutManager(): UseShortcutManagerReturn {
     );
     const [recordingId, setRecordingId] = useState<string | null>(null);
     const [hasChanges, setHasChanges] = useState(false);
-    const [hasSaved, setHasSaved] = useState(false);
     const recordingRef = useRef<HTMLDivElement>(null);
     const { isMac } = usePlatform();
     const initConfig = useRef<null | {
         shortcuts: ShortcutItem[];
         generalSettings: GeneralSetting[];
     }>(null);
+    const isRecorded = useRef(false);
 
     /* ---- Toast ---- */
     const showToast = useCallback(
@@ -63,16 +63,32 @@ export function useShortcutManager(): UseShortcutManagerReturn {
 
     /* ---- 快捷键录制 ---- */
     const startRecording = (id: string) => {
+        if (!isRecorded.current) {
+            isRecorded.current = true;
+            ConfigManager.stopShortcuts();
+        }
         setRecordingId(id);
     };
 
     const cancelRecording = () => {
+        ConfigManager.updateAllSetting(shortcuts, generalSettings).then(
+            (isSuccess) => {
+                if (!isSuccess) {
+                    showToast("保存失败, 已恢复初始状态", "danger", 3000);
+                    if (initConfig.current) {
+                        setShortcuts(initConfig.current.shortcuts);
+                        setGeneralSettings(initConfig.current.generalSettings);
+                    }
+                }
+            },
+        );
         setRecordingId(null);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent, id: string) => {
         e.preventDefault();
         e.stopPropagation();
+        const oneKeyListId = ["point_key", "pinned_key", "hide_win_key"];
 
         // 防止长按重复触发
         if (e.repeat) return;
@@ -84,29 +100,23 @@ export function useShortcutManager(): UseShortcutManagerReturn {
             e.key === "Meta";
 
         // 只按修饰键不记录
-        if (isModifierOnly) return;
+        if (isModifierOnly && !oneKeyListId.includes(id)) return;
 
         const keys = eventToKeys(e, isMac); // 建议内部用 e.code + modifier
         console.log(keys);
 
         if (!keys || keys.length === 0) return;
 
-        const hasModifier = e.ctrlKey || e.metaKey || e.altKey || e.shiftKey;
+        // 限制规则,单个按键时
+        if (oneKeyListId.includes(id)) {
+            const isFunctionKey =
+                e.code.startsWith("F") && /^F\d{1,2}$/.test(e.code);
 
-        const isFunctionKey =
-            e.code.startsWith("F") && /^F\d{1,2}$/.test(e.code);
-
-        const isAllowedSingle =
-            isFunctionKey || e.code === "Tab" || e.code === "Escape";
-
-        // 限制规则：普通键必须带修饰键
-        if (!hasModifier && !isAllowedSingle) {
-            showToast(
-                "请至少包含 Ctrl / ⌘ / Alt / Shift 或使用功能键",
-                "warning",
-                4000,
-            );
-            return;
+            const special = e.key === "Tab" || e.key === "Escape";
+            if (!isFunctionKey && !special) {
+                showToast("请仔细查看说明，并使用规定按键", "warning", 4000);
+                return;
+            }
         }
 
         // 标准化 key（避免顺序问题）
@@ -153,11 +163,8 @@ export function useShortcutManager(): UseShortcutManagerReturn {
         );
 
         if (success) {
-            setHasSaved(true);
-            showToast("保存成功, 2秒后自动关闭", "success");
-            setTimeout(() => {
-                getCurrentWindow().close();
-            }, 2000);
+            isRecorded.current = false;
+            showToast("保存设置成功", "success");
         } else {
             showToast("保存失败, 已恢复初始状态", "danger", 3000);
             if (initConfig.current) {
@@ -168,7 +175,7 @@ export function useShortcutManager(): UseShortcutManagerReturn {
     };
 
     const closeApp = async () => {
-        if (!hasSaved) {
+        if (isRecorded.current) {
             await ConfigManager.updateAllSetting(shortcuts, generalSettings);
         }
         getCurrentWindow().close();

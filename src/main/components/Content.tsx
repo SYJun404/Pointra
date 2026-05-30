@@ -13,10 +13,25 @@ const AudioPlayer = ({
 }) => {
     if (!isShow) return null;
 
-    if (typeof voice === "string" || voice?.phonetic === undefined)
+    if (
+        typeof voice === "string" ||
+        voice.phonetic.length == 0 ||
+        voice?.phonetic === undefined
+    )
         return (
-            <div className="flex gap-1.5 font-sans font-semibold  items-center text-xs text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW">
-                <p className="pb-px">null</p>
+            <div className="flex justify-between items-center">
+                <div
+                    className="flex gap-1.5 font-sans font-semibold  items-center text-xs transition-transform
+                text-tagSecondW justify-center h-6 px-2 rounded-md bg-tagBgW border border-borderMainW"
+                >
+                    <p className="pb-px">···</p>
+                </div>
+                <div
+                    className="flex items-center justify-center w-6 h-6 rounded-md bg-tagBgW border border-borderMainW
+                                   cursor-pointer transition-transform active:scale-90"
+                >
+                    <VolumeXmark color="#aaaaaa" width={14} height={14} />
+                </div>
             </div>
         );
 
