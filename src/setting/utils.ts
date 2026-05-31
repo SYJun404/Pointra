@@ -83,7 +83,6 @@ export const eventToKeys = (
 export function getConflictIds(
     shortcuts: { id: string; keys: string[] }[],
 ): Set<string> {
-    console.log(shortcuts);
     const map = new Map<string, string[]>();
     for (const s of shortcuts) {
         if (s.keys.length === 0) continue;

@@ -15,6 +15,10 @@ export interface UseShortcutManagerReturn {
     conflictIds: Set<string>;
     showToast: (msg: string) => void;
     toggleGeneral: (id: string) => void;
+    updateGeneralSetting: (
+        id: string,
+        value: boolean | string | number,
+    ) => void;
     startRecording: (id: string) => void;
     cancelRecording: () => void;
     handleKeyDown: (e: React.KeyboardEvent, id: string) => void;
@@ -53,10 +57,20 @@ export function useShortcutManager(): UseShortcutManagerReturn {
         [],
     );
 
-    /* ---- 通用设置 ---- */
+    /* ---- 通用设置 单选框---- */
     const toggleGeneral = (id: string) => {
         setGeneralSettings((prev) =>
-            prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)),
+            prev.map((s) => (s.id === id ? { ...s, value: !s.value } : s)),
+        );
+        setHasChanges(true);
+    };
+
+    const updateGeneralSetting = (
+        id: string,
+        value: boolean | string | number,
+    ) => {
+        setGeneralSettings((prev) =>
+            prev.map((s) => (s.id === id ? { ...s, value } : s)),
         );
         setHasChanges(true);
     };
@@ -82,6 +96,7 @@ export function useShortcutManager(): UseShortcutManagerReturn {
                 }
             },
         );
+        isRecorded.current = false;
         setRecordingId(null);
     };
 
@@ -223,6 +238,7 @@ export function useShortcutManager(): UseShortcutManagerReturn {
         conflictIds,
         showToast,
         toggleGeneral,
+        updateGeneralSetting,
         startRecording,
         cancelRecording,
         handleKeyDown,

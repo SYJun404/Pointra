@@ -1,4 +1,4 @@
-import { Xmark, ArrowRightArrowLeft } from "@gravity-ui/icons";
+import { Xmark, ArrowsRotateLeft } from "@gravity-ui/icons";
 import type { ShortcutItem } from "../types";
 import { ShortcutKeys } from "./KeyTag";
 import type { UseShortcutManagerReturn } from "../hooks";
@@ -121,6 +121,21 @@ export function ShortcutSection({
                                         <div className="flex items-center gap-2">
                                             <ShortcutKeys keys={item.keys} />
                                             <div className="flex items-center gap-1">
+                                                {changed && (
+                                                    <button
+                                                        onClick={() =>
+                                                            onResetOne(item.id)
+                                                        }
+                                                        className="flex items-center justify-center w-6 h-6 rounded-md border border-borderMainW
+                                                                       bg-white text-tagSecondW hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200
+                                                                       transition-all active:scale-90 cursor-pointer"
+                                                    >
+                                                        <ArrowsRotateLeft
+                                                            width={12}
+                                                            height={12}
+                                                        />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() =>
                                                         onStartRecording(
@@ -130,29 +145,12 @@ export function ShortcutSection({
                                                     className="flex items-center justify-center w-6 h-6 rounded-md border border-borderMainW
                                                                bg-white text-tagSecondW hover:bg-blueBgW hover:text-mainBlueW hover:border-blueBorderW
                                                                transition-all active:scale-90 cursor-pointer"
-                                                    title="修改快捷键"
                                                 >
                                                     <Xmark
                                                         width={12}
                                                         height={12}
                                                     />
                                                 </button>
-                                                {changed && (
-                                                    <button
-                                                        onClick={() =>
-                                                            onResetOne(item.id)
-                                                        }
-                                                        className="flex items-center justify-center w-6 h-6 rounded-md border border-borderMainW
-                                                                   bg-white text-tagSecondW hover:bg-amber-50 hover:text-amber-600 hover:border-amber-200
-                                                                   transition-all active:scale-90 cursor-pointer"
-                                                        title="恢复默认"
-                                                    >
-                                                        <ArrowRightArrowLeft
-                                                            width={12}
-                                                            height={12}
-                                                        />
-                                                    </button>
-                                                )}
                                             </div>
                                         </div>
                                     )}

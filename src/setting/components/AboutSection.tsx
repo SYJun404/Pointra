@@ -33,7 +33,7 @@ export function AboutSection() {
                     </div>
                 </div>
             </div>
-            <p className="text-[11px] my-3 text-center text-tagSecondW">
+            <p className="text-[11px] mt-3 text-center text-tagSecondW">
                 Developed By SYJun
             </p>
         </section>

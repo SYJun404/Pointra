@@ -15,6 +15,7 @@ function SettingPage() {
         recordingRef,
         conflictIds,
         toggleGeneral,
+        updateGeneralSetting,
         startRecording,
         cancelRecording,
         handleKeyDown,
@@ -29,10 +30,11 @@ function SettingPage() {
             <SettingHeader closeApp={closeApp} />
 
             {/* ============ 滚动内容 ============ */}
-            <div className="flex-1 overflow-y-auto no-scrollbar px-3 pt-3  space-y-6">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-3 pt-3 mb-3 space-y-6">
                 <GeneralSection
                     settings={generalSettings}
                     onToggle={toggleGeneral}
+                    onUpdate={updateGeneralSetting}
                 />
 
                 <ShortcutSection

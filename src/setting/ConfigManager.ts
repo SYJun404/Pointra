@@ -24,11 +24,10 @@ export class ConfigManager {
      */
     static async getAllSettings() {
         const rustConfig = await this.fetchRawConfig();
-        console.log(rustConfig);
 
         const general = GENERAL_SETTINGS_TEMPLATE.map((meta) => ({
             ...meta,
-            enabled: rustConfig[meta.id],
+            value: rustConfig[meta.id],
         }));
 
         const shortcuts: ShortcutItem[] = SHORTCUT_LIST_TEMPLATE.map(
@@ -53,6 +52,8 @@ export class ConfigManager {
             const config: RustAppConfig = {
                 auto_hide: true,
                 auto_play: false,
+                pronunciation: "us",
+                pronunciation_volume: 50,
                 hide_win_key: "Tab",
                 pinned_key: "F1",
                 point_key: "F3",
@@ -64,7 +65,7 @@ export class ConfigManager {
             };
 
             for (const setting of general) {
-                Object.assign(config, { [setting.id]: setting.enabled });
+                Object.assign(config, { [setting.id]: setting.value });
             }
             for (const setting of shortcuts) {
                 for (const key of setting.save) {

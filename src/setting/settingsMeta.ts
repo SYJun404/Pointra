@@ -12,7 +12,10 @@ type Keys = keyof Pick<
 >;
 
 export const GENERAL_SETTINGS_TEMPLATE: {
-    id: keyof Pick<RustAppConfig, "auto_hide" | "auto_play">;
+    id: keyof Pick<
+        RustAppConfig,
+        "auto_hide" | "auto_play" | "pronunciation" | "pronunciation_volume"
+    >;
     label: string;
     description: string;
 }[] = [
@@ -25,6 +28,16 @@ export const GENERAL_SETTINGS_TEMPLATE: {
         id: "auto_play" as const,
         label: "自动播放",
         description: "查词成功后自动播放单词音频",
+    },
+    {
+        id: "pronunciation" as const,
+        label: "单词发音",
+        description: "选择美式发音或英式发音",
+    },
+    {
+        id: "pronunciation_volume" as const,
+        label: "发音音量",
+        description: "设置单词发音音量 (10-100)",
     },
 ];
 

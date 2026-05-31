@@ -10,6 +10,9 @@ pub struct AppConfig {
     pub auto_hide: bool,
     pub auto_play: bool,
 
+    pub pronunciation: String,
+    pub pronunciation_volume: u32,
+
     pub point_key: Key,
     pub pinned_key: Key,
     pub hide_win_key: Key,
@@ -27,6 +30,8 @@ impl Default for AppConfig {
             theme: "light".to_string(),
             auto_hide: true,
             auto_play: false,
+            pronunciation: "us".to_string(),
+            pronunciation_volume: 50,
             point_key: Key::F3,
             pinned_key: Key::F1,
             hide_win_key: Key::Tab,
